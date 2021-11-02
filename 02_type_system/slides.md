@@ -25,6 +25,16 @@ Understanding the quirks of scala's type system
 
 ---
 
+# Thanks!
+
+Thank you to our Pyjama Warriors,
+
+joining early in the morning
+
+(You are excempted from being asked random questions)
+
+---
+
 # Reminder
 
 Slides [here](https://github.com/rminehan/sandstone-scala-training)
@@ -54,6 +64,26 @@ int i = 1;
 ```
 
 > Aren't they the same thing?
+
+---
+
+# Fundamentals building
+
+Not so directly relevant
+
+Filling the gaps
+
+---
+
+# Useful for things like
+
+- weird compiler errors
+
+
+- type gymnastics
+
+
+- reduce java anxiety
 
 ---
 
@@ -151,7 +181,18 @@ nope
 
 ---
 
-# Example: the JVM
+Next
+
+```
+ _____ _                ___     ____  __ 
+|_   _| |__   ___      | \ \   / /  \/  |
+  | | | '_ \ / _ \  _  | |\ \ / /| |\/| |
+  | | | | | |  __/ | |_| | \ V / | |  | |
+  |_| |_| |_|\___|  \___/   \_/  |_|  |_|
+                                         
+```
+
+Look at the JVM's type system
 
 ---
 
@@ -161,16 +202,19 @@ nope
 
 Numerics:
 
-- int (32 bit signed integral type)
+- int
 
 
-- long (64 bit signed integral type)
+- long
 
 
-- float (32 bit signed floating point type)
+- short
 
 
-- double (64 bit signed floating point type)
+- float
+
+
+- double
 
 (More granular than json)
 
@@ -285,7 +329,7 @@ Pseudo-primitive
 - built into the JVM's logic, e.g. application entry point:
 
 ```java
-public void main(String[] args) {
+public static void main(String[] args) {
   ...
 }
 ```
@@ -310,15 +354,30 @@ public void main(String[] args) {
 ----------------------------------------------------------
 ```
 
-Which side does `Array` go on?
+Which side does array go on?
+
+e.g. `int[]`, `String[]`
+
+```
+ ___ 
+|__ \
+  / /
+ |_| 
+ (_) 
+     
+```
 
 ---
 
 # Array?
 
-Odd case
+TLDR: Object
 
-- `Objects` in the sense that they inherit from `java.lang.Object`
+---
+
+# It's an odd case
+
+- inherit from `Object` like other reference types
 
 
 - special treatment from the JVM (e.g. `int[]`)
@@ -330,96 +389,6 @@ Odd case
 - not initialised with constructors ("dynamically created")
 
 (left them off my diagram to keep things simple)
-
----
-
-> a group of built in types you can use to represent data
-
-One array type for each simple primitive and `Object`:
-
-- `int[]`
-
-
-- `float[]`
-
-
-- `long[]`
-
-etc...
-
-- `Object[]`
-
----
-
-
----
-
-# What makes a "primitive" primitive?
-
-ie. what's the essence of a primitive
-
----
-
-# What makes a "primitive" primitive?
-
-- how they're created at runtime
-
-
-- specialised byte code instructions
-
----
-
-# Quick demo
-
-We'll look at some byte code instructions
-
-To the terminal!
-
----
-
-# Summary of demo
-
-```java
-  // Many 'i' instructions
-  public int intDemo();
-       0: iconst_1
-       1: istore_1
-       2: bipush        100
-       4: istore_2
-       5: iload_1
-       6: iload_2
-       7: iadd
-       8: ireturn
-
-  // Many 'f' instructions
-  public float floatDemo();
-       0: fconst_1
-       1: fstore_1
-       2: ldc           #2                  // float 100.0f
-       4: fstore_2
-       5: fload_1
-       6: fload_2
-       7: fadd
-       8: freturn
-
-  // Many 'a' instructions ('a' = reference)
-  // A bit more complex
-  public java.lang.String stringDemo();
-    Code:
-       0: ldc           #3                  // String hey
-       2: astore_1
-       3: ldc           #4                  // String you
-       5: astore_2
-       6: new           #5                  // class java/lang/StringBuilder
-       9: dup
-      10: invokespecial #6                  // Method java/lang/StringBuilder."<init>":()V
-      13: aload_1
-      14: invokevirtual #7                  // Method java/lang/StringBuilder.append:(Ljava/lang/String;)Ljava/lang/StringBuilder;
-      17: aload_2
-      18: invokevirtual #7                  // Method java/lang/StringBuilder.append:(Ljava/lang/String;)Ljava/lang/StringBuilder;
-      21: invokevirtual #8                  // Method java/lang/StringBuilder.toString:()Ljava/lang/String;
-      24: areturn
-```
 
 ---
 
@@ -500,7 +469,7 @@ Has a compiler which produces byte code
 
 ## JVM
 
-A machine
+A _machine_
 
 Runs byte code
 
@@ -510,27 +479,27 @@ Runs byte code
 
 True or false
 
-> Scala code is run
+> Scala code is run by the JVM
 
 ---
 
 # False!
 
-> Scala code is run
+> Scala code is run by the JVM
 
 Scala code is compiled
 
-Byte code is run
+Byte code is run by the JVM
 
 ---
 
 # False!
 
-> Scala code is run
+> Scala code is run by the JVM
 
 Scala code is compiled
 
-Byte code is run
+Byte code is run by the JVM
 
 (Grammar police alert!)
 
@@ -570,7 +539,7 @@ It's all in the imagination of the compiler
 
 
 
-                Scala's World View
+                Scala's Type System
 
 ----------------------------------------------------------
                       Any
@@ -682,9 +651,9 @@ It's all in the imagination of the compiler
 
 ---
 
-# Existential crisis
+# Existential crisis!
 
-The world of Java developer has just been shattered
+The world of the Java developer has just been shattered
 
 ---
 
@@ -739,7 +708,32 @@ Simplified TLDR: Usually corresponds to `void` on the JVM
 
 ---
 
-# Scala is void of void
+# What is `void` in java/JVM?
+
+Is it a type?
+
+Can you pass voids into methods?
+
+```
+ ___ 
+|__ \
+  / /
+ |_| 
+ (_) 
+     
+```
+
+---
+
+# void
+
+> What is `void` in java/JVM?
+
+Represents when a method doesn't produce a value
+
+---
+
+# What about scala?
 
 Have you ever seen `void` in scala code?
 
@@ -754,33 +748,11 @@ Have you ever seen `void` in scala code?
 
 ---
 
-# What is `void` in java/JVM?
+# Scala is void of void
 
-Is it a type?
+> Have you ever seen `void` in scala code?
 
-Can you pass voids into methods?
-
----
-
-# void
-
-Represents when a method doesn't produce a value
-
----
-
-# At the byte code level?
-
-Quick demo
-
----
-
-# void?
-
-Means that nothing gets pushed onto the stack before quitting the function
-
----
-
-# Scala and void
+No
 
 Why doesn't scala have a `void` keyword like java?
 
@@ -796,7 +768,7 @@ Go back to your high school maths days...
 
 # In the class room
 
-Teacher is describing some function `f` on the blackboard
+Teacher is describing some function `f: Integers -> Integers` on the blackboard
 
 Asks the class:
 
@@ -810,13 +782,13 @@ Asks the class:
 
 Someone says:
 
-> f doesn't produce a value at 3
+> f doesn't produce a value at 3, just eats it
 
 ---
 
 # In the class room
 
-> f doesn't produce a value at 3
+> f doesn't produce a value at 3, just eats it
 
 Hmmm...
 
@@ -912,6 +884,8 @@ Everything is an expression
 
 But what if I just replicate the java code?
 
+These look like statements!
+
 ```scala
 println("Hi")
 
@@ -922,33 +896,25 @@ if (removeUser) {
 
 ---
 
-# In the compiler's mind
-
-```scala
-// Produces a Unit
-println("Hi")
-```
-
-just like:
-
-```scala
-// Produces an Int
-1 + 3
-```
-
----
-
 # Let's assign it to stuff
 
 To the repl!
 
 ---
 
-# So: Unit
+# The problem we face
 
-The type equivalent of `void`
+Scala wants to live in a world where everything is an expression
 
-A trick to make everything an expression in the type system
+The JVM has concepts like `void` and statements that don't fit that
+
+---
+
+# Introduce Unit
+
+An invented type that is returned by statements
+
+Turns them into expressions
 
 ---
 
@@ -962,7 +928,7 @@ Does this mean that scala is making little units everywhere?
 
 # Wasteful?
 
-> Does this mean that scala is making little units everywhere?
+> Does this mean that scala is putting little units everywhere?
 
 Mostly no
 
@@ -1170,9 +1136,11 @@ def printThing(thing: Any): Unit = {
 
 You're thinking:
 
-> But how could that work? 
+> But how could that work on the JVM?
 >
 > The JVM doesn't have a "top" type that works for primitives and objects...
+>
+> What will this translate to?
 
 ---
 
@@ -1281,6 +1249,10 @@ What should we make the type of `x` here?
 
 # Nothing
 
+```scala
+val x = throw new IllegalArgumentException("No Bobans!")
+```
+
 > What should we make the type of `x` here?
 
 `Nothing`
@@ -1295,6 +1267,9 @@ Scala's way of representing code paths that will never gracefully terminate.
 
 
 - exceptions
+
+
+- program termination
 
 ---
 
@@ -1383,6 +1358,8 @@ Probably the most confusing type
 
 ---
 
+The end!
+
 ```
  ____                                             
 / ___| _   _ _ __ ___  _ __ ___   __ _ _ __ _   _ 
@@ -1391,8 +1368,6 @@ Probably the most confusing type
 |____/ \__,_|_| |_| |_|_| |_| |_|\__,_|_|   \__, |
                                             |___/ 
 ```
-
-Overall
 
 ---
 
@@ -1428,7 +1403,69 @@ Overall
 - Any (top type)
 
 
-- Nothing (bottom type)
+- Nothing (bottom type, code paths that never yield a value)
+
+---
+
+# And back to the most important question
+
+> Why is Int uppercase in scala ...
+
+```scala
+val i: Int = 1
+```
+
+> but lowercase in java?
+
+```java
+int i = 1;
+```
+
+> Aren't they the same thing?
+
+---
+
+# java/jvm
+
+```java
+int i = 1;
+```
+
+int is primitive
+
+Primitives use a lowercase letter
+
+Objects use an uppercase letter
+
+---
+
+# Scala
+
+```scala
+val i: Int = 1
+```
+
+There is no concept of primitives
+
+Everything is part of one unified family
+
+Everything feels like an object
+
+---
+
+# So...
+
+> Are they the same thing?
+
+Mostly,
+
+but that's for another time
+
+---
+
+# Further Reading
+
+[Unified type system docs](https://docs.scala-lang.org/tour/unified-types.html)
 
 ---
 
