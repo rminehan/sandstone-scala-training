@@ -1,5 +1,6 @@
 class NothingDemo {
-  def throwIt(): Unit = {
+  def throwIt(): Nothing = {
     val x = throw new RuntimeException("Eep!")
+    x
   }
 }
