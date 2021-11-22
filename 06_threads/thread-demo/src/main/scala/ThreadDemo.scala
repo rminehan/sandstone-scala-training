@@ -9,8 +9,9 @@ object ThreadDemo {
     // Parse cli arguments - see extractors below for gory details
     implicit val (ec, numIterations, sleep) = args match {
       case Array(EcExtract(ec), NumIterations(int), Sleep(bool)) => (ec, int, bool)
+      case Array(EcExtract(ec), NumIterations(int)) => (ec, int, true)
       case _ =>
-        println("Usage: run [ec=free|pooled] [numIterations=(+int)] [sleep=true|false]")
+        println("Usage: run [ec=free|pooled] [numIterations=(+int)] [sleep=sleep(default)|no_sleep]")
         sys.exit()
     }
 
@@ -76,9 +77,9 @@ object NumIterations {
 }
 
 object Sleep {
-  def unapply(boolStr: String): Option[Boolean] = boolStr match {
-    case "true" => Some(true)
-    case "false" => Some(false)
+  def unapply(sleepStr: String): Option[Boolean] = sleepStr match {
+    case "sleep" => Some(true)
+    case "no_sleep" => Some(false)
     case _ => None
   }
 }
