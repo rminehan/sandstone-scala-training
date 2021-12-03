@@ -19,7 +19,7 @@ The resources are generally slides and code samples.
 
 The slides are designed to be used with a cli presentation tool `lookatme`.
 
-Demos were usually done using simple ammonite scripts or just using the repl. We used ammonite for scala 2.12 but they should generally work with 2.13 onwards. Scripts were run with `amm [SCRIPT.sc]`.
+Demos were usually done using simple ammonite scripts or just using the repl. We used ammonite for scala 2.13 but they should generally work with 2.12. Scripts were run with `amm [SCRIPT.sc]`.
 
 # Methodology
 
