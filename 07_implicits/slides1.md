@@ -48,7 +48,7 @@ Don't overuse and abuse
 - implicit parameters
 
 
-- implicit extensions
+- implicit classes
 
 
 - implicit conversions
