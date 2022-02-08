@@ -1,7 +1,7 @@
 ---
 author: Rohan
-date: 2021-12-06
-title: Implicit Extensions
+date: 2021-12-08
+title: Implicit Classes
 ---
 
 ```

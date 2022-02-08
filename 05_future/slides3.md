@@ -1,6 +1,6 @@
 ---
 author: Rohan
-date: 2021-11-17
+date: 2021-11-19
 title: More Future Combinators
 ---
 
