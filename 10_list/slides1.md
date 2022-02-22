@@ -1,6 +1,6 @@
 ---
 author: Rohan
-date: 2022-01-10
+date: 2022-02-24
 title: List
 ---
 
@@ -33,13 +33,7 @@ Often useful with recursion and FP
 
 Simple and easy to reason about
 
----
-
-# Important things to understand
-
-What it's good at (prepending)
-
-What it's bad at (appending, random inserting)
+Good introduction to functional data structures
 
 ---
 
@@ -60,14 +54,6 @@ Will be more beginner friendly
 
 
 - build an api around it
-
----
-
-# Coming up
-
-Performance
-
-Functional data structures
 
 ---
 
@@ -105,6 +91,14 @@ What does it do badly?
  |_|
  (_)
 ```
+
+---
+
+# Ambiguous "List"
+
+"List" is to data structures,
+
+as "service" is to ops
 
 ---
 
@@ -159,6 +153,10 @@ In CS jargon,
 
 most closely resembles a _singly linked list_
 
+```
+1 --> 2 --> 3 --> ...
+```
+
 ---
 
 # The cons cell
@@ -172,7 +170,7 @@ A cons cell is a piece of data and a pointer linking it to another List
 
  data    pointer
  "head"  "tail"
-````
+```
 
 ---
 
@@ -184,11 +182,11 @@ A cons cell is a piece of data and a pointer linking it to another List
  ------ ---       ------ ---       ------ ---
 
    cell 0           cell 1          cell 2
-````
+```
 
 ---
 
-# Singly linked"
+# "Singly linked"
 
 ```
  ------ ---       ------ ---      ------ ---
@@ -196,7 +194,7 @@ A cons cell is a piece of data and a pointer linking it to another List
  ------ ---       ------ ---      ------ ---
 
    cell 0           cell 1          cell 2
-````
+```
 
 Each pointing forward
 
@@ -208,15 +206,15 @@ but not vice versa
 
 # If all we had is a cons cell...
 
-... what problem do you see?
-
 ```
  ------ ---       ------ ---      ------ ---
 |  0   |   |---> |  1   |   |--->|  2   |   |--->  ...
  ------ ---       ------ ---      ------ ---
 
    cell 0           cell 1          cell 2
-````
+```
+
+... what problem do you see?
 
 ```
  ___
@@ -230,8 +228,6 @@ but not vice versa
 
 # If all we had is a cons cell...
 
-> ... what problem do you see?
-
 ```
  ------ ---       ------ ---      ------ ---
 |  0   |   |---> |  1   |   |--->|  2   |   |--->  ...   ???
@@ -239,6 +235,8 @@ but not vice versa
 
    cell 0           cell 1          cell 2
 ```
+
+> ... what problem do you see?
 
 It never ends!
 
@@ -296,17 +294,30 @@ Called 'Nil'
    cell 0           cell 1          cell 2
 ```
 
-No data
+No data - the "empty List"
 
 Just exists to end the chain
 
 ---
 
-# Building a List
+# Example
 
-We start from the back and prepend
+Build `List(1, 2, 3, 4)`
 
-Example: Build `List(1, 2, 3, 4)`
+Using just our two concepts:
+
+- cons cell
+
+
+- terminus (`Nil`)
+
+---
+
+# Example
+
+> Build `List(1, 2, 3, 4)`
+
+We start from the _back_ and prepend to the front
 
 ---
 
@@ -388,7 +399,7 @@ Terminates at `Nil`
 
 # Recap of concepts
 
-Built from the back
+Built from the back, prepending
 
 ---
 
@@ -590,194 +601,60 @@ Our cons list fits very naturally with recursion
 
 ---
 
-# Problem with our design
+# Homework
+
+Define `drop` analogous to `List`'s
+
+```scala
+val list = ConsList(1, 2, 3, 4)
+
+val afterFirst2 = ConsList.drop(list, 2)
+
+ConsList.foreach(afterFirst2, println)
+// 3
+// 4
+```
+
+(do `take` for bonus points)
 
 ---
 
-# Stray lists
+# Solutions
+
+No peeking until you've tried!
 
 ```scala
-trait ConsList
+import scala.annotation.tailrec
 
-case class ConsCell(head: Int, tail: ConsList) extends ConsList
+...
 
-case object Terminus extends ConsList
-```
+object ConsList {
+  ...
 
-What stops someone else making their own list:
-
-```scala
-case object HackerList extends ConsList
-```
-
----
-
-# Implicit assumption
-
-e.g. map
-
-```scala
-def map(list: ConsList, f: Int => Int): ConsList = {
-  list match {
-    case Terminus => Terminus
-    case ConsCell(head, tail) =>
-      val newHead: Int = f(head)
-      val newTail: ConsList = map(tail, f)
-      ConsCell(newHead, newTail)
+  @tailrec
+  def drop(list: ConsList, length: Int): ConsList = {
+    if (length <= 0) list
+    else list match {
+      case Terminus => Terminus
+      case ConsCell(_, tail) => drop(tail, length - 1)
+    }
   }
+
+  ...
+
 }
 ```
 
-Implicit assumption here that there's only two kinds of list:
-
-- terminus
-
-
-- cons cell
-
 ---
-
-# Hacker
-
-```scala
-case object HackerList extends ConsList
-
-map(HackerList, _ * 2)
-
-def map(list: ConsList, f: Int => Int): ConsList = {
-  list match {
-    case Terminus => Terminus
-    case ConsCell(head, tail) =>
-      val newHead: Int = f(head)
-      val newTail: ConsList = map(tail, f)
-      ConsCell(newHead, newTail)
-  }
-}
-```
-
-Will compile and then throw a MatchError
-
----
-
-# Like Option
-
-`ConsList` is like `Option`
-
-"enum"y
-
----
-
-# "enum"y
-
-We only want a predefined set of values:
-
-- Option: None and Some
-
-
-- ConsList: Terminus and ConsCell
-
----
-
-# ADT
-
-We've stumbled on something:
-
-> algebraic data type
-
-A data abstraction with only certain allowed forms
-
----
-
-# Translating to code
-
-How do you tell the compiler to not allow other subtypes?
-
-```scala
-trait ConsList
-
-case class ConsCell(head: Int, tail: ConsList) extends ConsList
-
-case object Terminus extends ConsList
-```
 
 ```
- ___
-|__ \
-  / /
- |_|
- (_)
+ ____
+|  _ \ ___  ___ __ _ _ __
+| |_) / _ \/ __/ _` | '_ \
+|  _ <  __/ (_| (_| | |_) |
+|_| \_\___|\___\__,_| .__/
+                    |_|
 ```
-
----
-
-# sealed
-
-Make it sealed
-
-```diff
--trait ConsList
-+sealed trait ConsList
-
- case class ConsCell(head: Int, tail: ConsList) extends ConsList
-
- case object Terminus extends ConsList
-```
-
-Can only be extended in the same file
-
----
-
-# Let's seal it
-
-We'll seal it and try to attack it
-
-To the editor!
-
----
-
-# sealed summary
-
-Makes it a true ADT
-
-The compiler makes sure there's only ever two kinds of cons List
-
----
-
-# Prettier prepending
-
-```scala
-// Ugly
-ConsCell(1, otherList)
-
-// Pretty
-1 :: otherList
-```
-
-Let's add a `::` method!
-
-To the editor!
-
----
-
-# Prepend Summary
-
-```scala
-sealed trait ConsList {
-  def ::(newHead: Int): ConsList = ConsCell(newHead, this)
-}
-
-1 :: otherList
-
-1 :: 2 :: 3 :: 4 :: Terminus
-```
-
----
-
-# The "real" list
-
-We've been reimplementing the real `List` from scratch
-
-Hopefully you have a stronger intuition for it!
 
 ---
 
@@ -791,71 +668,47 @@ but the cons cell structure is the same
 
 ---
 
-```
- ____
-/ ___| _   _ _ __ ___  _ __ ___   __ _ _ __ _   _
-\___ \| | | | '_ ` _ \| '_ ` _ \ / _` | '__| | | |
- ___) | |_| | | | | | | | | | | | (_| | |  | |_| |
-|____/ \__,_|_| |_| |_|_| |_| |_|\__,_|_|   \__, |
-                                            |___/
-```
-
----
-
 # List
 
-A single linked list
+A singly linked list
 
 ```
  ------ ---      ------ ---      ------ ---      ------ ---
-|  2   |   |--->|  4   |   |--->|  6   |   |--->|  8   |   |---> Nil
+|  1   |   |--->|  2   |   |--->|  3   |   |--->|  4   |   |---> Nil
  ------ ---      ------ ---      ------ ---      ------ ---
 ```
 
 ---
 
-# ADT
+# Two concepts
 
-A List is either:
-
-- cons cell (head data + tail pointer)
+- cons cell
 
 
-- terminus (`Nil`)
+- terminus
 
 ---
 
-# Recursion
+# Recursive processing
 
-List is very well suited to head first recursion
-
-```
- ------ ---      ------ ---      ------ ---      ------ ---
-|  2   |   |--->|  4   |   |--->|  6   |   |--->|  8   |   |---> Nil
- ------ ---      ------ ---      ------ ---      ------ ---
-
-   ------------------------------------------------------------->
-            recurse         recurse         recurse         recurse
-```
-
-- deal with the head
+- cons cell (process head and recurse onto the tail)
 
 
-- recurse on the tail
+- terminus (base case)
 
+---
 
-- stop at `Nil`
+# DIY
+
+Hopefully it's helped you see under the hood
 
 ---
 
 # Next time
 
-Performance of List:
+Enhance the api more
 
-- good use cases
-
-
-- bad use cases
+Introduce algegbraic data types
 
 ---
 
@@ -864,6 +717,6 @@ Performance of List:
  / _ \ _   _  ___  ___| |_(_) ___  _ __  ___
 | | | | | | |/ _ \/ __| __| |/ _ \| '_ \/ __| ?
 | |_| | |_| |  __/\__ \ |_| | (_) | | | \__ \
- \__\_\\__,_|\___||___/\__|_|\___/|_| |_|___/
+ \__\_\__,_|\___||___/\__|_|\___/|_| |_|___/
 
 ```
