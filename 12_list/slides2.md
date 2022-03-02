@@ -332,7 +332,7 @@ Will compile and then throw a `MatchError`
 
 # Attack it!
 
-We'll make a separate file with `HackerList`
+We'll make a separate file with an attacker list in it,
 
 then map over it
 
@@ -394,7 +394,7 @@ case object Terminus extends ConsList
 Make it sealed
 
 ```diff
--trait ConsList
+-       trait ConsList
 +sealed trait ConsList
 
  case class ConsCell(head: Int, tail: ConsList) extends ConsList
@@ -426,7 +426,7 @@ Any code processing a cons list only has to worry about those 2 cases
 
 # Scala 3
 
-Has advanced language features that make it easier encode ADT's
+Has advanced language features that make it easier to encode ADT's
 
 ---
 

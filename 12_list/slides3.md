@@ -528,11 +528,11 @@ But that doesn't change the time complexity
 
 # Why I mention this
 
-Parallelism usually speeds things up by a constant factor
+Parallelism usually speeds things up by a constant factor (might be good enough)
 
 But that doesn't change the time complexity
 
-Changing it to logarithmic or constant time would still be better
+Changing it to logarithmic or constant time would still be better (but isn't always feasible)
 
 ---
 
@@ -552,9 +552,10 @@ e.g.
 
 ```
 fac(3) = 3 * fac(2)
-       = 3 * 2 * fac(1)
-       = 3 * 2 * 1 * fac(0)
-       = 3 * 2 * 1 * 1
+       = 3 * (2 * fac(1))
+       = 3 * (2 * (1 * fac(0)))
+       = 3 * (2 * (1 * 1))
+       = 3 * 2 * 1 * 1  (associativity)
        = 6
 ```
 
@@ -657,6 +658,5 @@ Applying time/space complexity concepts to `List`
  / _ \ _   _  ___  ___| |_(_) ___  _ __  ___
 | | | | | | |/ _ \/ __| __| |/ _ \| '_ \/ __| ?
 | |_| | |_| |  __/\__ \ |_| | (_) | | | \__ \
- \__\_\__,_|\___||___/\__|_|\___/|_| |_|___/
-
+ \__\_\\__,_|\___||___/\__|_|\___/|_| |_|___/
 ```

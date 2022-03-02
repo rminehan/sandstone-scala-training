@@ -70,8 +70,8 @@ val names = getNamesFromDatabase
 
 val updatedNames = names :+ "Boban" :+ "Bobanita"
 
-println(updateNames.head)
-println(updateNames.take(3))
+println(updatedNames.head)
+println(updatedNames.take(3))
 ```
 
 ---
@@ -114,7 +114,7 @@ Want something efficient for those use cases
 > (Read front) and we often need to read near the front of the collection
 
 ```scala
-val names = List("James", "Pranai", "Yuhan", "Feroz", "Rohan", "Lanie", "Lee")
+val names = List("James", "Pranali", "Yuhan", "Feroz", "Rohan", "Lanie", "Lee")
 ```
 
 How fast is reading from the front?
@@ -124,18 +124,16 @@ How fast is reading from the front?
 # List front
 
 ```
-    Code:
-val names = List("James", "Pranai", "Yuhan", "Feroz", "Rohan", "Lanie", "Lee")
+    Code: val names = List("James", "Pranali", "Yuhan", "Feroz", "Rohan", "Lanie", "Lee")
 
-    Linked list:
-                 James -> Pranali -> Yuhan -> Feroz -> Rohan -> Lanie -> Lee
-                 ^
-                 names
+    Linked list:            James -> Pranali -> Yuhan -> Feroz -> Rohan -> Lanie -> Lee
+                            ^
+                            names
 
 
-    Structurally
-            ConsCell("James", ConsCell("Pranali", ... , Terminus)))
-                     head     tail     head       ...   tail
+    Structurally: ConsCell("James", ConsCell("Pranali", ... , Terminus)))
+                  ^        head     tail     head       ...   tail
+                  names
 ```
 
 `names` is a reference to the outer most cons cell
@@ -155,18 +153,16 @@ How fast is it to get the "James" data?
 # List front
 
 ```
-    Code:
-val names = List("James", "Pranai", "Yuhan", "Feroz", "Rohan", "Lanie", "Lee")
+    Code: val names = List("James", "Pranali", "Yuhan", "Feroz", "Rohan", "Lanie", "Lee")
 
-    Linked list:
-                 James -> Pranali -> Yuhan -> Feroz -> Rohan -> Lanie -> Lee
-                 ^
-                 names
+    Linked list:            James -> Pranali -> Yuhan -> Feroz -> Rohan -> Lanie -> Lee
+                            ^
+                            names
 
 
-    Structurally
-            ConsCell("James", ConsCell("Pranali", ... , Terminus)))
-                     head     tail     head       ...   tail
+    Structurally: ConsCell("James", ConsCell("Pranali", ... , Terminus)))
+                  ^        head     tail     head       ...   tail
+                  names
 ```
 
 > How fast is it to get the "James" data?
@@ -743,6 +739,5 @@ More on this next time
  / _ \ _   _  ___  ___| |_(_) ___  _ __  ___
 | | | | | | |/ _ \/ __| __| |/ _ \| '_ \/ __| ?
 | |_| | |_| |  __/\__ \ |_| | (_) | | | \__ \
- \__\_\__,_|\___||___/\__|_|\___/|_| |_|___/
-
+ \__\_\\__,_|\___||___/\__|_|\___/|_| |_|___/
 ```

@@ -38,11 +38,8 @@ object ConsList {
 
 object Demo {
   def main(args: Array[String]): Unit = {
-    // Create something analogous to List(1, 2, 3, 4)
-    val list = ConsList.map(ConsList(1, 2, 3, 4), _ * 2)
+    val list = ConsList(1, 2, 3, 4)
 
-    val prepended = 10 :: list
-
-    ConsList.foreach(prepended, i => println(i))
+    ConsList.foreach(list, println)
   }
 }

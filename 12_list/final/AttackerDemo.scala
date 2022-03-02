@@ -1,6 +1,6 @@
 object AttackerDemo {
 
-  // If ConsList isnt sealed, the compiler will allow this
+  // If ConsList isn't sealed, the compiler will allow this
   case object Attacker extends ConsList
 
   def main(args: Array[String]): Unit = {

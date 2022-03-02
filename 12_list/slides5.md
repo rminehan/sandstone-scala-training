@@ -254,11 +254,22 @@ An array makes sense for that example
 
 ---
 
+# Both?
+
+A good functional data structure can give us both:
+
+- safety
+
+
+- performance
+
+---
+
 # Functional data structures
 
-Sometimes there are ways you can reuse existing structures
+With the right design,
 
-Then minimal copying is needed
+we can efficiently reuse structure when copying
 
 ---
 
@@ -389,7 +400,7 @@ This was very efficient because we reused structure
 
 # Functional data structures
 
-Structures designed for sharing an reuse
+Structures designed for sharing and reuse
 
 ---
 
@@ -829,6 +840,5 @@ Tail recursion
  / _ \ _   _  ___  ___| |_(_) ___  _ __  ___
 | | | | | | |/ _ \/ __| __| |/ _ \| '_ \/ __| ?
 | |_| | |_| |  __/\__ \ |_| | (_) | | | \__ \
- \__\_\__,_|\___||___/\__|_|\___/|_| |_|___/
-
+ \__\_\\__,_|\___||___/\__|_|\___/|_| |_|___/
 ```
