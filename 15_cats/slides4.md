@@ -33,13 +33,13 @@ The set of all types with an "equals" concept
 
 Pretty much everything
 
-It's more difficulty a type that _doesn't_ have equals
+It's more difficulty to find a type that _doesn't_ have equals
 
 ---
 
 # Why is it useful?
 
-Provides a way to compare things
+We always need to compare things
 
 ---
 
@@ -64,46 +64,8 @@ Demo time!
 # Summary
 
 ```scala
-class Base(val int: Int) {
-  override def equals(other: Any): Boolean = {
-    if (other.isInstanceOf[Base])
-      other.asInstanceOf[Base].int == this.int
-    else false
-  }
-}
-
-val base1 = new Base(3)
-
-val base2 = new Base(3)
-
-base1.equals(base2) // true, good!
-base1.equals(4) // false, but why would you even let this compile?
-
-class Child(int: Int, val string: String) extends Base(int) {
-  override def equals(other: Any): Boolean = {
-    if (other.isInstanceOf[Child]) {
-      val otherChild = other.asInstanceOf[Child]
-      otherChild.int == this.int && otherChild.string == this.string
-    }
-    else false
-  }
-}
-
-val child1 = new Child(3, "hi")
-val child2 = new Child(3, "hi")
-
-child1.equals(child2) // true, good!
-base1.equals(child1) // true, good!
-child1.equals(base1) // false, bad!
-
-(child1: Base).equals(new Child(3, "bye")) // false, confusing!
+1 == "abc" // compiler allows this, even though it doesn't make sense
 ```
-
----
-
-# Also
-
-We forgot to override the hashcode
 
 ---
 
@@ -111,40 +73,62 @@ We forgot to override the hashcode
 
 So equality is a mess
 
----
-
-# Root cause: Any
-
-A lot of it comes back to `equals` having to support all types:
-
-```scala
-def equals(other: Any): Boolean = ...
-//                ^^^
-//                :(
-```
+(many articles about this kind of thing)
 
 ---
 
-# Root cause: being a member function
+# Other issues...
+
+---
+
+# Any
+
+When you define your own `equals`, the type is `Any`:
 
 ```scala
-base1.equals(child1) // logic defined in `Base`
-child1.equals(base1) // logic defined in `Child`
+class Foo {
+    override def equals(other: Any): Boolean = ...
+    //                         ^^^
+    //                         :(
+}
 ```
 
-Asymmetry
+No type safety...
+
+---
+
+# Asymmetry
+
+```scala
+class A {
+    override def equals(other: Any): Boolean = ...
+}
+
+class B {
+    override def equals(other: Any): Boolean = ...
+}
+```
+
+```scala
+a.equals(b) // logic defined in `A`
+b.equals(a) // logic defined in `B`
+```
+
+Different logic is used when you switch them
+
+Leads to bugs
 
 ---
 
 # Ideally
 
-If I were to compare two things...
+Suppose we were comparing two strings,
+
+think about a nice safe contract for that...
 
 ---
 
-# Example 1
-
-If I were to compare two `String`'s, I'd want a function like:
+# Something like
 
 ```scala
 def equals(left: String, right: String): Boolean = ...
@@ -152,20 +136,10 @@ def equals(left: String, right: String): Boolean = ...
 
 ---
 
-# Example 2
-
-If I were to compare two `Image`'s, I'd want a function like:
-
-```scala
-def equals(left: Image, right: Image): Boolean = ...
-```
-
----
-
 # Attributes
 
 ```scala
-def equals(left: Image, right: Image): Boolean = ...
+def equals(left: String, right: String): Boolean = ...
 ```
 
 ## Symmetrical
@@ -175,37 +149,13 @@ equals(left, right)
 equals(right, left)
 ```
 
-both use the same "static" logic
+both use the same logic
 
-Better expresses that equality is a symmetrical binary operator
+"Static" - both are args, neither is "caller"
 
 ## Type safe
 
-The compiler wouldn't allow me do: `equals(3, image)`
-
-## Clarity
-
-It's clear what they're being compared as `Image`'s
-
-(and not as some child class)
-
----
-
-# Type class
-
-If I were to compare two `String`'s, I'd want a function like:
-
-```scala
-def equals(left: String, right: String): Boolean = ...
-```
-
-If I were to compare two `Image`'s, I'd want a function like:
-
-```scala
-def equals(left: Image, right: Image): Boolean = ...
-```
-
-etc...
+The compiler won't allow: `equals(3, "abc")`
 
 ---
 
@@ -316,28 +266,56 @@ To the repl!
 
 ```scala
 implicit object StringEq extends Eq[String] {
-  def equals(left: String, right: String): Boolean = if (left == "abc") true else false
+  def equals(left: String, right: String): Boolean = left == "abc"
 }
 
 "abc" === "def" // true, hmm...
 "def" === "def" // false, hmm...
 ```
 
+Something's clearly off about this implementation
+
 ---
 
 # Laws
 
-```
-reflexive:  a === a
+- reflexive
 
-symmetry:   a === b   implies    b === a
 
-transitivity: a === b, b === c   implies a === c
-```
+- symmetric
+
+
+- transitive
+
+---
+
+# Reflexive
+
+> you always equal yourself
+
+ie. `equals(a, a)` always yields `true`
+
+---
+
+# Symmetry
+
+> swapping places won't change anything
+
+ie. `equals(a, b)` is the same as `equals(b, a)`
+
+---
+
+# Transitive
+
+> a === b, b === c implies a === c
 
 ---
 
 # Let's test it out
+
+> Something's clearly off about this implementation
+
+We have formal laws now to describe what's off
 
 ---
 
@@ -345,13 +323,11 @@ transitivity: a === b, b === c   implies a === c
 
 ```scala
 implicit object StringEq extends Eq[String] {
-  def equals(left: String, right: String): Boolean = if (left == "abc") true else false
+  def equals(left: String, right: String): Boolean = left == "abc"
 }
+
+StringEq.equals("def", "def") // false
 ```
-
-a === a
-
-"def" === "def" // false
 
 FAIL
 
@@ -361,23 +337,44 @@ FAIL
 
 ```scala
 implicit object StringEq extends Eq[String] {
-  def equals(left: String, right: String): Boolean = if (left == "abc") true else false
+  def equals(left: String, right: String): Boolean = left == "abc"
 }
+
+StringEq.equals("abc", "def") // true
+StringEq.equals("def", "abc") // false
 ```
-
-## Symmetry?
-
-a === b   implies   b === a
-
-"abc" === "def" // true
-
-"def" === "abc" // false
 
 FAIL
 
 ---
 
-# A lawful interesting example
+# Flexibility
+
+Our laws let us apply some flexibility in comparing things
+
+Two things don't have to be precisely the same to be considered equals
+
+---
+
+# Example
+
+Let's consider two strings equal if they're case insensitively the same
+
+`"ABC" === "abc"`
+
+---
+
+# Encoding that
+
+```scala
+implicit object StringCaseInsensitiveEq extends Eq[String] {
+  def equals(left: String, right: String): Boolean = left.toLowerCase == right.toLowerCase
+}
+```
+
+---
+
+# Lawful?
 
 ```scala
 implicit object StringCaseInsensitiveEq extends Eq[String] {
@@ -389,59 +386,111 @@ implicit object StringCaseInsensitiveEq extends Eq[String] {
 
 # Testing it
 
+```scala
+implicit object StringCaseInsensitiveEq extends Eq[String] {
+  def equals(left: String, right: String): Boolean = left.toLowerCase == right.toLowerCase
+}
+```
+
 ## Reflexive?
 
-Yep,
+```scala
+equals("abc", "abc") // true
+```
 
-`a.toLowerCase == a.toLowerCase`
+## Symmetrical?
 
-## Symmetrical
-
-Yep
-
-Example: "ABC", "abc"
+We're applying lowercasing to the left and right symmetrically
 
 ## Transitive
 
-Yep
+Yeah
 
-Example: "ABC", "Abc", "abc"
+Harder to prove but it intuitively makes sense
 
 ---
 
-# Aside
+# So
 
 You can use `Eq` for these more liberal comparisons
 
-Called "equivalence relations"
+---
+
+# "Equivalence relations"
+
+> You can use `Eq` for these more liberal comparisons
+
+Formal name for this concept
+
+---
+
+# Formally
+
+An equivalence relation is some function `(A, A) => Boolean`
+
+which is:
+
+- reflexive
+
+
+- symmetric
+
+
+- transitive
+
+---
+
+# Generalised
+
+> An equivalence relation is some function `(A, A) => Boolean`
+
+Strict equality (`==`) is a special case of this
 
 ---
 
 # Real world example
 
-Person A === Person B if they're blood relatives
+```scala
+def bloodRelatives(personA: Person, personB: Person): Boolean = ...
+```
+
+This is an equivalence relation
 
 ---
 
 # Lawful
 
-> Person A === Person B if they're blood relatives
+```scala
+def bloodRelatives(personA: Person, personB: Person): Boolean = ...
+```
 
-## Transitive
+## Reflexive
 
-Is a person related to themselves?
+```scala
+bloodRelatives(a, a)
+```
+
+ie. Is a person related to themselves?
 
 Yeah
 
 ## Symmetry
 
-If I'm your blood relative, then you're mine
+Yep
+
+> If John is related to Bob, then Bob is related to John
 
 ## Transitive
 
-If I'm related to Uncle Bob, and Uncle Bob is related to you,
+Yep, it's intrinsic to this concept "relative"
 
-then I'm related to you
+Example:
+
+> If I'm related to my dad,
+>
+> and my dad is related to Grandpa
+>
+> then I'm related to Grandpa
 
 ---
 
@@ -475,15 +524,37 @@ implicit object HippyStringEq extends Eq[String] {
 
 ## Reflexive
 
-Does `a === a`? Yep, in fact it equals everything
+```scala
+HippyStringEq.equals(a, a)
+```
+
+Does it return `true`?
+
+Yes because it always returns true for everything
 
 ## Symmetry
 
-If `a === b`, does `b === a`? Yep, because it equals everything
+```scala
+HippyStringEq.equals(a, b)
+HippyStringEq.equals(b, a)
+```
+
+Will they always be the same?
+
+Yes because they both always return true
 
 ## Transitive
 
-If `a === b` and `b === c`, does `a === c`? Yep, because it equals everything
+```scala
+// Suppose both of these return true
+HippyStringEq.equals(a, b)
+HippyStringEq.equals(b, c)
+
+// Will this return true?
+HippyStringEq.equals(a, c)
+```
+
+Yes because it always returns true!
 
 ## Summary
 
@@ -536,6 +607,8 @@ __        __                     _
 
 The type class of all things with an equals concept
 
+`(A, A) => Boolean`
+
 ---
 
 # Better than `==`
@@ -544,7 +617,7 @@ Avoids many edge cases `equals/==` have
 
 ---
 
-# "Equals?"
+# "Equals?" "Equivalence?"
 
 Doesn't have to be the strict kind of equality you're used to
 
