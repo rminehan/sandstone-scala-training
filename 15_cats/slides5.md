@@ -40,34 +40,23 @@ What is the `Traverse` type class?
 
 ---
 
-# Confusing terminology
+# Terminology
 
-Traverse?
-
-Sequence?
+`sequence != Seq`
 
 ---
 
-# Confusing terminology
+# Familiar
 
-Traverse?
-
-Sequence?
-
-New concepts
-
-Is related to `Future.traverse` and `Future.sequence`
+`Future.traverse` and `Future.sequence`
 
 ---
 
-# Traverse vs traverse
+# Cats
 
-My convention:
+`Traverse` is part of cats
 
-- Traverse: type class
-
-
-- traverse: function
+To the browser!
 
 ---
 
@@ -82,56 +71,13 @@ My convention:
 
 ---
 
-# Examples first
+# Examples
 
-We'll rangle a `Seq[Option[...]]`
-
-To the repl!
-
----
-
-# Summary
-
-```scala
-def getAgeFromId(id: String): Option[Int] = id match {
-  case "boban" => Some(26)
-  case "bobanita" => Some(25)
-  case "tim" => Some(40)
-  case _ => None
-}
-
-val goodIds = Seq("boban", "bobanita", "tim")
-
-val lookups = goodIds.map(getAgeFromId)
-
-val ages = lookups.collect { case Some(age) => age }
-
-val agesOpt = if (ages.size == userAgeLookups.size) Some(ages) else None
-```
-
-Works but is a bit icky
-
----
-
-# Better way
-
-This is just a `sequence` operation
-
-(supported by `Traverse`)
-
----
-
-# Cats
-
-`Traverse` is part of cats
-
-To the browser!
-
----
-
-# Try again
+We'll rangle a `Seq[Option[...]]` into `Option[Seq[...]]`
 
 Let's solve this with `sequence` from cats
+
+To the repl!
 
 ---
 
@@ -141,6 +87,15 @@ Let's solve this with `sequence` from cats
 import $ivy.`org.typelevel::cats-core:2.7.0`
 
 import cats.syntax.traverse._
+
+def getAgeFromId(id: String): Option[Int] = id match {
+  case "boban" => Some(26)
+  case "bobanita" => Some(25)
+  case "tim" => Some(40)
+  case _ => None
+}
+
+val goodIds = Seq("boban", "bobanita", "tim")
 
 goodIds.map(getAgeFromId).sequence
 // Type:  Option[Seq[Int]]
@@ -176,10 +131,6 @@ F[G[A]]    ----->    G[F[A]]
 F is a member of the `Traverse` type class,
 
 if it has a way to switcheroo with other type constructors (represented by G)
-
----
-
-# Future example
 
 ---
 
@@ -383,6 +334,8 @@ Effectively switcheroo's the type constructors
 
 Because internally mapN is used to combine G's
 
+and mapN requires applicative
+
 ---
 
 # If that didn't make sense...
@@ -419,6 +372,138 @@ Seq[Option[Int]]   ---->   Option[Seq[Int]]
 Seq[Future[Int]]   ---->   Future[Seq[Int]]
 Seq[Triplet[Int]]  ---->   Triplet[Seq[Int]]
 ```
+
+---
+
+# Question
+
+Can you double switcheroo?
+
+---
+
+# Question
+
+Can you double switcheroo?
+
+ie. can you sequence twice and get back to where you started?
+
+---
+
+# Option Example
+
+```scala
+// Start here
+Seq(Option(1), Option(2), Option(3))
+// Type: Seq[Option[Int]]
+// Value: Seq(Some(1), Some(2), Some(3))
+
+Seq(Option(1), Option(2), Option(3)).sequence
+// Type:  Option[Seq[Int]]
+// Value: Some(Seq(1, 2, 3))
+
+Seq(Option(1), Option(2), Option(3)).sequence.sequence
+// Type:  Seq[Option[Int]]
+// Value: Seq(Some(1), Some(2), Some(3))
+```
+
+This works
+
+And we got back where we started!
+
+---
+
+# Seq example
+
+```scala
+// Start here
+Seq(Seq(1, 2, 3), Seq(4, 5, 6, 7))
+// Type:  Seq[Seq[Int]]
+
+Seq(Seq(1, 2, 3), Seq(4, 5, 6, 7)).sequence
+// Type:  Seq[Seq[Int]]
+// Value: Seq(Seq(1, 4), Seq(1, 5), ...)  (length 3x4=12)
+// (all the pairs with one representative from each Seq)
+
+Seq(Seq(1, 2, 3), Seq(4, 5, 6, 7)).sequence.sequence
+// Type:  Seq[Seq[Int]]
+// Value: Seq(
+//   Seq(1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3),    |
+//   Seq(1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 7),    | 2^12=4096
+//   Seq(1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 6, 3),    | sub-sequences
+//       ----------------------------------      | in total
+//                 all size 12                   |
+```
+
+This works
+
+But it definitely doesn't get us back where started!
+
+Each `.sequence` drastically increases the size
+
+The last one is formed by choosing one representative from 12 sub-sequences of size 2.
+
+---
+
+# Future example
+
+```scala
+import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits.global
+
+// Start here
+Seq(Future.successful(1), Future.successful(2), Future.successful(3))
+// Type:  Seq[Future[Int]]
+
+Seq(Future.successful(1), Future.successful(2), Future.successful(3)).sequence
+// Type:  Future[Seq[Int]]
+// Value: Future(Success(Seq(1, 2, 3)))  (eventually)
+
+Seq(Future.successful(1), Future.successful(2), Future.successful(3)).sequence.sequence
+// computer says no...
+// Error: "value sequence is not a member of scala.concurrent.Future[Seq[Int]]"
+```
+
+This isn't possible
+
+`Future` is not a member of the `Traverse` type class and so doesn't support `sequence`
+
+---
+
+# Back to our question
+
+> Can you double switcheroo?
+
+The first `F[G[A]].sequence` requires:
+
+- `F` is `Traverse`
+- `G` is `Applicative`
+
+Once they're switcheroo'd the next step is `G[F[A]].sequence` which requires:
+
+- `G` is `Traverse`
+- `F` is `Applicative`
+
+---
+
+# Back to our question
+
+> Can you double switcheroo?
+
+If `F` and `G` are both `Traverse` and `Applicative` then you can
+
+---
+
+# Self-inverting?
+
+> ... and get back to where you started?
+
+No
+
+Even if you _can_ double switcheroo,
+
+there's no guarantee you'll end up back at the same value
+
+(as with `Seq` example)
 
 ---
 
@@ -575,7 +660,7 @@ G = Option
 B = Int
 
 
-Seq[String]               Option[Seq[Int]]
+Seq[String]  -------->    Option[Seq[Int]]
 String => Option[Int]
 ```
 
@@ -628,13 +713,11 @@ then you're too late, so just `sequence` it
 
 ---
 
-# Other examples?
-
----
-
 # Other examples
 
 Every example we've done today was with F = Seq
+
+(except one double switcheroo example with Option)
 
 ---
 
