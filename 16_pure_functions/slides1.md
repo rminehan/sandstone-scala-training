@@ -1,6 +1,6 @@
 ---
 author: Rohan
-date: 2022-06-13
+date: 2022-07-05
 title: Pure Functions
 ---
 
@@ -23,6 +23,10 @@ title: Pure Functions
 
 # Pure Functions
 
+Big concept
+
+Touches everything we do
+
 An important part of your FP brain washing...
 
 ---
@@ -32,32 +36,24 @@ An important part of your FP brain washing...
 - what is a pure function?
 
 
-- why is it useful?
-
-
 - what stops functions being pure?
 
 
-- composing pure functions
-
-
-- dealing with impurity
+- why is purity useful?
 
 ---
 
 # Why should I care?
 
-Leads to stronger software:
+You'll see it has a lot of very practical uses
 
-- easier to test
+---
 
+# Training roadmap
 
-- easier to reason about
+Purity relates to testing, error handling and modelling
 
-
-- better designed, clearer abstraction boundaries
-
-More on this during the talk
+Made sense to cover first
 
 ---
 
@@ -84,70 +80,27 @@ What is a pure function?
 
 # Definition
 
-A function is pure if you can always inline it without changing anything
+An expression is pure if you can always inline it without changing your program's behaviour
+
+---
+
+# Counter-examples
+
+> An expression is pure if you can always inline it without changing your program's behaviour
+
+Easiest to explain with impure expressions
+
+---
+
+# Side effects...
+
+We'll see that functions with side effects aren't pure...
 
 ---
 
 # Example
 
-> you can always inline it without changing anything
-
-```scala
-def cleanString(s: String): String = s.trim.toLowerCase
-
-...
-
-// Cached
-val cleaned = cleanString(" BoBaN ")
-val fullName = s"$cleaned jones"
-println(cleaned)
-```
-
----
-
-# Example
-
-> you can always inline it without changing anything
-
-```scala
-def cleanString(s: String): String = s.trim.toLowerCase
-
-...
-
-// Cached
-val cleaned = cleanString(" BoBaN ")
-val fullName = s"$cleaned jones"
-println(cleaned)
-
-
-// Inlined
-val fullName = s"${cleanString(" BoBaN ")} jones"
-println(cleanString(" BoBaN ")
-```
-
----
-
-# Example
-
-This one is pure...
-
-Inlining it will never change anything
-
-```scala
-def cleanString(s: String): String = s.trim.toLowerCase
-```
-
----
-
-# Another example
-
-Think of one that's not pure...
-
-ie. when would inlining matter...
-
----
-
-# Side effect...
+Function with a side effect
 
 ```scala
 var counter = 0
@@ -158,11 +111,17 @@ def cleanString(s: String): String = {
 }
 ```
 
-Create a simple program that uses the cleaned string twice
+Create a simple program that cleans a string,
+
+then uses that value twice
 
 ---
 
 # Hmmm...
+
+> Create a simple program that cleans a string,
+>
+> then uses that value twice
 
 ```scala
 var counter = 0
@@ -183,6 +142,8 @@ println(cleaned)
 
 # Impure!
 
+> An expression is pure if you can always inline it without changing anything
+
 ```scala
 var counter = 0
 
@@ -200,9 +161,171 @@ println(cleaned)
 
 // Inlined
 val fullName = s"${cleanString(" BoBaN ")} jones"
-println(cleanString(" BoBaN ")
+println(cleanString(" BoBaN "))
 // counter == 2
 ```
+
+---
+
+# Next impurity...
+
+Non-deterministic logic
+
+---
+
+# Example
+
+Consider this program:
+
+```scala
+val now = ZonedDateTime.now()
+
+Thread.sleep(5000)
+
+println(now)
+```
+
+---
+
+# Inlining?
+
+Would it change behaviour if we inlined `now`?
+
+## Before
+
+```scala
+val now = ZonedDateTime.now()
+
+Thread.sleep(5000)
+
+println(now)
+```
+
+## After
+
+```scala
+Thread.sleep(5000)
+
+println(ZonedDateTime.now())
+```
+
+```
+ ___
+|__ \
+  / /
+ |_|
+ (_)
+```
+
+---
+
+# Yep
+
+> Would it change behaviour if we inlined `now`?
+
+## Before
+
+```scala
+val now = ZonedDateTime.now()
+
+Thread.sleep(5000)
+
+println(now)
+```
+
+## After
+
+```scala
+Thread.sleep(5000)
+
+println(ZonedDateTime.now())
+```
+
+It will print out a timestamp 5 seconds different
+
+---
+
+# Next impurity...
+
+Throwing exceptions
+
+---
+
+# Example
+
+Consider this program:
+
+```scala
+def tantrum: Int = throw new Exception("Wah!")
+
+val i = tantrum // exception happens in the caller's thread
+
+Future {
+  println("Hi")
+  i
+}
+```
+
+The `Future` is never started, "Hi" never prints
+
+---
+
+# Inline it
+
+```scala
+def tantrum: Int = throw new Exception("Wah!")
+
+// val i = tantrum // exception happens in the caller's thread
+
+Future {
+  println("Hi")
+  tantrum
+}
+```
+
+The `Future` _is_ started, "Hi" prints then the Future fails
+
+---
+
+# Impure!
+
+You get different behaviour depending _where_ an exception is thrown
+
+---
+
+# Interesting example
+
+With impure code and `Future`,
+
+we need to think a lot harder and be more careful about where it runs
+
+---
+
+# Note
+
+It's not exceptions which are breaking purity...
+
+---
+
+# Note
+
+It's not exceptions which are breaking purity...
+
+it's _throwing_ exceptions
+
+---
+
+# Pure exception example
+
+You can gracefully _return_ exceptions in a pure way
+
+```scala
+def createException(error: String): Exception = new ComputationException(s"Computation failed: $error")
+```
+
+---
+
+# Recap
 
 ---
 
@@ -210,13 +333,85 @@ println(cleanString(" BoBaN ")
 
 > A function is pure, if inlining it will never change anything
 
-A nice way of detecting anything odd the function does
+A nice rule for detecting anything odd the function does
 
 ---
 
 # Lingo
 
 Also called "referentially transparent"
+
+---
+
+# Expanding to expressions
+
+Purity is not limited to functions
+
+> An expression is pure if you can always inline it without changing anything
+
+---
+
+# Example 1
+
+```scala
+val x = 30 * 50
+
+println(x)
+```
+
+---
+
+# Example 1
+
+```scala
+val x = 30 * 50
+
+println(x)
+```
+
+inlines to:
+
+```scala
+println(30 * 50)
+```
+
+---
+
+# Example 2
+
+```scala
+val x = if (s.nonEmpty) Some(s) else None
+
+val y = process(x)
+```
+
+inlines to:
+
+```scala
+val y = process(if (s.nonEmpty) Some(s) else None)
+```
+
+---
+
+# So..
+
+Purity is a concept for expressions
+
+Functions are just one example of that
+
+(but often the most common one we talk about)
+
+---
+
+# Holy Trinity of Purity
+
+- no side effects
+
+
+- complete: always returns gracefully (no exceptions, infinite loops, jvm shutdowns)
+
+
+- deterministic
 
 ---
 
@@ -235,9 +430,23 @@ __        ___             _
 
 ```
 
+Why is it nice to work with pure functions?
+
 ---
 
 # Easy refactoring
+
+---
+
+# Refactoring
+
+> Tidying up your code without changing the behaviour
+
+Good fit for pure functions
+
+---
+
+# Inlining example
 
 ---
 
@@ -254,6 +463,20 @@ val next = cleaned.toUpperCase
 You say,
 
 > it's only used once, I want to inline it
+
+---
+
+# Suppose...
+
+`cleanString` is pure...
+
+```scala
+val cleaned = cleanString(" BoBaN ") // pure
+
+... // 30 lines
+
+val next = cleaned.toUpperCase
+```
 
 ---
 
@@ -275,70 +498,57 @@ becomes
 val next = cleanString(" BoBaN ").toUpperCase
 ```
 
+Easy peasy lemon squeezy
+
 ---
 
-# Moving example
+# Suppose...
+
+`cleanString` is _not_ pure...
+
+---
+
+# Hmmm....
 
 ```scala
-val cleaned = cleanString(" BoBaN ")
+val cleaned = cleanString(" BoBaN ") // impure
 
 ... // 30 lines
 
 val next = cleaned.toUpperCase
 ```
 
-You say,
+:(
 
-> why is it defined so far away from where it's used!
+Now we have understand:
 
-(reduce semantic distance)
+- what happens in that function
+
+
+- any possible interactions with those 30 lines of code
 
 ---
 
-# Moving example
+# Extraction example
+
+---
+
+# Extraction example
 
 ```scala
-val cleaned = cleanString(" BoBaN ")
-
-... // 30 lines
-
-val next = cleaned.toUpperCase
-```
-
-becomes
-
-```scala
-... // 30 lines
-
-val cleaned = cleanString(" BoBaN ")
-val next = cleaned.toUpperCase
-```
-
----
-
-# In both cases
-
-If `cleanString` is pure,
-
-your changes won't modify the behaviour of the program
-
----
-
-# Refactoring
-
-> Tidying up your code without changing the logic
-
-Good fit for pure functions
-
----
-
-# Performance example
-
-```scala
-def expensive(s: String): Option[Int] = ...
+val x1 = expensive("Boban")
 
 ...
 
+val x2 = expensive("Boban")
+val y = x2 + 1
+```
+
+---
+
+# Extraction example
+
+```scala
 val x1 = expensive("Boban")
 
 ...
@@ -351,24 +561,18 @@ You say,
 
 > Yikes! I'm doing the same expensive operation twice!
 
-ie. reverse inline (outline?), cache
-
 ---
 
 # Refactoring
 
 ```diff
- def expensive(s: String): Option[Int] = ...
-
- ...
-
  val x1 = expensive("Boban")
 
  ...
 
 -val x2 = expensive("Boban")
--val y = x2 + 1
-+val y = x1 + 1
++val x2 = x1
+ val y = x2 + 1
 ```
 
 Safe to do if `expensive` is pure
@@ -412,7 +616,7 @@ More refactoring means less rot
 The signature tells you exactly what it does:
 
 ```scala
-def cleanString(s: String): String = s.trim.toLowerCase
+def cleanString(s: String): String = ...
 ```
 
 ---
@@ -420,7 +624,7 @@ def cleanString(s: String): String = s.trim.toLowerCase
 # What I see
 
 ```scala
-def cleanString(s: String): String = s.trim.toLowerCase
+def cleanString(s: String): String = ...
 ```
 
 - takes a `String`
@@ -447,21 +651,6 @@ you only find out by peeping inside the code and playing with it
 
 ---
 
-# Modify the example
-
-```scala
-def cleanString(s: String): String = {
-  if (s.isEmpty)
-    throw new InvalidArgumentException("Empty strings not supported")
-  else
-    s.trim.toLowerCase
-}
-```
-
-(later we'll show throwing exceptions is impure)
-
----
-
 # Side effect?
 
 ```scala
@@ -481,9 +670,11 @@ Thanks Admiral Ackbar!
 
 ---
 
-# Simple functions
+# Simple
 
-Simple functions make life simple
+Pure functions make life simple
+
+"It does what it says on the label"
 
 Inputs, outputs
 
@@ -491,661 +682,393 @@ No side effects and nasty exceptions
 
 ---
 
-```
-__        ___           _     _                    _
-\ \      / / |__   __ _| |_  | |__  _ __ ___  __ _| | _____
- \ \ /\ / /| '_ \ / _` | __| | '_ \| '__/ _ \/ _` | |/ / __|
-  \ V  V / | | | | (_| | |_  | |_) | | |  __/ (_| |   <\__ \
-   \_/\_/  |_| |_|\__,_|\__| |_.__/|_|  \___|\__,_|_|\_\___/
+# Memoization
 
-                  _ _        ___
- _ __  _   _ _ __(_) |_ _   |__ \
-| '_ \| | | | '__| | __| | | |/ /
-| |_) | |_| | |  | | |_| |_| |_|
-| .__/ \__,_|_|  |_|\__|\__, (_)
-|_|                     |___/
+---
+
+# Example
+
+Consider factorial:
+
+```scala
+def fac(n: BigInt): BigInt = ...
+
+fac(5) = 5 * 4 * 3 * 2 * 1
+```
+
+O(n) time complexity
+
+---
+
+# Service example
+
+FE sends the BE a number
+
+BE computes the factorial and returns it
+
+What optimisation can you see?
+
+```
+ ___
+|__ \
+  / /
+ |_|
+ (_)
 ```
 
 ---
 
-# The trifecta of impurity
+# Memoization
 
-- side effects
+> FE sends the BE a number
+>
+> BE computes the factorial and returns it
+>
+> What optimisation can you see?
 
+Memoization!
 
-- throwing exceptions
+Suppose James sends 20_000 and Pranali does too
 
-
-- non-determinism
+Why recompute `fac(20_000)`?
 
 ---
 
-# Proofs
+# Algorithm
 
-For each,
+Each time a request arrives:
 
-I'll provide a little proof that they break purity
+- check if we've already computed it
+
+
+- if yes, return that
+
+
+- if not, compute, store and return
+
+---
+
+# What prevents memoization?
+
+---
+
+# Cookie example
+
+FE sends BE a user id,
+
+BE replies with that user's favourite flavour of cookie
+
+---
+
+# Cookie example
+
+> FE sends BE a user id,
+>
+> BE replies with that user's favourite flavour of cookie
+
+Can you memoize this?
+
+```
+ ___
+|__ \
+  / /
+ |_|
+ (_)
+```
+
+---
+
+# Cookie example
+
+> FE sends BE a user id,
+>
+> BE replies with that user's favourite flavour of cookie
+>
+> Can you memoize this?
+
+Not permanently
+
+People's taste in cookies change
+
+---
+
+# Cookie service
+
+```scala
+// Monday
+favouriteCookieFlavor("yuhan") // returns "choc-chip"
+
+// Tuesday
+favouriteCookieFlavor("yuhan") // returns "vegemite"
+```
+
+What member of the holy trinity of purity are we talking about here?
+
+```
+ ___
+|__ \
+  / /
+ |_|
+ (_)
+```
+
+---
+
+# Cookie service
+
+```scala
+// Monday
+favouriteCookieFlavor("yuhan") // returns "choc-chip"
+
+// Tuesday
+favouriteCookieFlavor("yuhan") // returns "vegemite"
+```
+
+> What member of the holy trinity of purity are we talking about here?
+
+Determinism
+
+This function is not deterministic,
+
+so memoizing is trickier
 
 ---
 
 # Side effects
 
----
-
-# Proof
-
-Suppose `f` has a side effect,
-
-then construct a program that uses the output of `f` twice
-
-and inline it
-
----
-
-# Example
-
-> then construct a program that uses the output of `f` twice
+Functions with side-effects are tricky to memoize as well
 
 ```scala
-// Has a side effect
-def f(): Int = ...
-
-val f1 = f()
-println(f1)
-println(f1)
+def favouriteCookieFlavor(userId: UserId): String =
+  // Side effect in here
+  // e.g. analytics, events, incrementing a counter
 ```
 
-Triggers the side effect once
+Memoizing will cause the counter to not get incremented on later requests
 
 ---
 
-# Example
-
-> and inline it
-
-```scala
-// Has a side effect
-def f(): Int = ...
-
-// Cached
-val f1 = f()
-println(f1)
-println(f1)
-
-// Inlined
-println(f())
-println(f())
-```
-
-Inlined, it triggers the side effect twice
-
-(which is different behaviour)
-
----
-
-# Throwing exceptions
-
----
-
-# Proof
-
-Suppose `f` throws an exception,
-
-then construct a program that uses the output of `f` in a `Future`
-
-and inline it
-
----
-
-# Example
-
-> then construct a program that uses the output of `f` in a `Future`
-
-```scala
-def f(input: String): Int = {
- if (input == "bad") throw new Exception
- ...
-}
-
-val f1 = f("bad") // exception happens in the caller's thread
-
-Future {
-  println("Hi")
-  f1
-}
-```
-
-The `Future` is never started, "Hi" never prints
-
----
-
-# Inline it
-
-> and inline it
-
-```scala
-def f(input: String): Int = {
- if (input == "bad") throw new Exception
- ...
-}
-
-// val f1 = f("bad")
-
-Future {
-  println("Hi")
-  // f1
-  f("bad")
-}
-```
-
-The `Future` _is_ started, "Hi" prints then the Future fails
-
----
-
-# Interesting example
-
-With impure code and `Future`,
-
-we need to think a lot harder and be more careful about where it runs
-
----
-
-# Note
-
-It's not exceptions which are breaking purity...
-
----
-
-# Note
-
-It's not exceptions which are breaking purity...
-
-it's _throwing_ exceptions
-
-(You can gracefully _return_ exceptions in a pure way)
-
----
-
-# Non-determinism
-
----
-
-# Proof
-
-Suppose `f` is non-deterministic,
-
-then construct a program where `f` will produce a different value when inlined,
-
-then inline it!
-
----
-
-# Example
-
-> then construct a program where `f` will produce a different value when inlined,
-
-```scala
-def f(): Long = {
-  // return the seconds since the epoch (Jan 1st 1970)
-  ...
-}
-
-val f1 = f() // Suppose this is 1,000,000
-
-Thread.sleep(30_000)
-println(f1) // prints 1,000,000
-```
-
----
-
-# Example
-
-> then inline it!
-
-```scala
-def f(): Long = {
-  // return the seconds since the epoch (Jan 1st 1970)
-  ...
-}
-
-// val f1 = f() // Suppose this is 1,000,000
-
-Thread.sleep(30_000)
-println(f()) // prints 1,000,030
-```
-
-By evaluating the function _after_ the sleep, we print a different result
-
----
-
-# Aside: parameter less functions
-
-If a function has no inputs, but returns a meaningful output...
-
----
-
-# Aside: parameter less functions
-
-If a function has no inputs, but returns a meaningful output...
-
-it's probably non-deterministic
-
-```scala
-ZonedDateTime.now()
-Random.nextInt()
-```
-
----
-
-# Summing up
-
-If your function has any of these, it can't be pure:
-
-- side effects
-
-
-- throwing exceptions
-
+# What hinders memoization?
 
 - non-determinism
 
----
 
-# Contrapositive
-
-> If your function has any of these, it can't be pure:
-
-Flipping that around, if a function is pure, it must be:
-
-- free of side effects
-
-
-- "complete" (never throw exceptions)
-
-
-- deterministic
-
-(The trifecta of purity)
+- side effects
 
 ---
 
-```
-  ____                                _
- / ___|___  _ __ ___  _ __   ___  ___(_)_ __   __ _
-| |   / _ \| '_ ` _ \| '_ \ / _ \/ __| | '_ \ / _` |
-| |__| (_) | | | | | | |_) | (_) \__ \ | | | | (_| |
- \____\___/|_| |_| |_| .__/ \___/|___/_|_| |_|\__, |
-                     |_|                      |___/
- ____
-|  _ \ _   _ _ __ ___
-| |_) | | | | '__/ _ \
-|  __/| |_| | | |  __/
-|_|    \__,_|_|  \___|
+# What hinders memoization?
 
- _____                 _   _
-|  ___|   _ _ __   ___| |_(_) ___  _ __  ___
-| |_ | | | | '_ \ / __| __| |/ _ \| '_ \/ __|
-|  _|| |_| | | | | (__| |_| | (_) | | | \__ \
-|_|   \__,_|_| |_|\___|\__|_|\___/|_| |_|___/
+- non-determinism
 
-```
+
+- side effects
+
+Pure functions don't have this!
+
+Very simple to memoize, easy peasy lemon squeezy
 
 ---
 
-# Pure babies
+# Equational reasoning
 
-When two pure functions combine,
+---
 
-they make a pure baby
+# Equational reasoning?
+
+Pure functions are like mathematical functions
 
 ---
 
 # Example
 
-Two pure functions
+Unrolling a computation
+
+---
+
+# Summing
 
 ```scala
-def cleanString(s: String): String = s.trim.toLowerCase
-
-def obscure(s: String): String = s.replaceAll("a", "")
-```
-
----
-
-# Example
-
-Two pure functions
-
-```scala
-def cleanString(s: String): String = s.trim.toLowerCase
-
-def obscure(s: String): String = s.replaceAll("a", "")
-
-// baby
-def cleanAndObscure(s: String): String = {
-  val cleaned = cleanString(s)
-  obscure(cleaned)
-}
-```
-
-The baby is also pure
-
----
-
-# Extend the example
-
-We find another pure function
-
-```scala
-def duplicate(s: String): String = s + s
-```
-
----
-
-# Grand-baby
-
-```scala
-def cleanAndObscure(s: String): String = {
-  val cleaned = cleanString(s)
-  obscure(cleaned)
-}
-
-def duplicate(s: String): String = s + s
-
-// grand-baby
-def cleanAndObscureAndDuplicate(s: String): String = {
-  val cleanedAndObscured = cleanedAndObscure(s)
-  duplicate(cleanedAndObscured)
-}
-```
-
-The grand-baby is also pure
-
----
-
-# Summary
-
-Composing pure functions creates more complex pure functions
-
-Easy to reason about your program
-
----
-
-# Pure + Impure = Impure
-
-Suppose `f` is pure, but `g` is impure...
-
----
-
-# Pure + Impure = Impure
-
-Suppose `f` is pure, but `g` is impure...
-
-then `f` composed with `g` is probably impure :(
-
----
-
-# Example
-
-```scala
-// Side-effect
-def cleanString(s: String): String = {
-  println("Hi")
-  s.trim.toLowerCase
-}
-
-def obscure(s: String): String = s.replaceAll("a", "")
-
-// Inherits its Daddy's side-effect
-def cleanAndObscure(s: String): String = {
-  val cleaned = cleanString(s)
-  obscure(cleaned)
+def sum(top: Int): Int = top match {
+  case 0 => 0
+  case _ => top + sum(top - 1)
 }
 ```
 
 ---
 
-# Example
+# Evaluate
 
 ```scala
-// Side-effect
-def cleanString(s: String): String = {
-  println("Hi")
-  s.trim.toLowerCase
+def sum(top: Int): Int = top match {
+  case 0 => 0
+  case _ => top + sum(top - 1)
 }
 
-def obscure(s: String): String = s.replaceAll("a", "")
+val total = sum(5)
+```
 
-// Inherits its Daddy's side-effect
-def cleanAndObscure(s: String): String = {
-  val cleaned = cleanString(s)
-  obscure(cleaned)
+---
+
+# Evaluate
+
+```scala
+def sum(top: Int): Int = top match {
+  case 0 => 0
+  case _ => top + sum(top - 1)
 }
-```
 
-Picture similar examples if `cleanString` threw an exception or was non-deterministic
+val total = top(5)
 
----
-
-```
- ____             _ _
-|  _ \  ___  __ _| (_)_ __   __ _
-| | | |/ _ \/ _` | | | '_ \ / _` |
-| |_| |  __/ (_| | | | | | | (_| |
-|____/ \___|\__,_|_|_|_| |_|\__, |
-                            |___/
-          _ _   _
-__      _(_) |_| |__
-\ \ /\ / / | __| '_ \
- \ V  V /| | |_| | | |
-  \_/\_/ |_|\__|_| |_|
-
- _                            _ _
-(_)_ __ ___  _ __  _   _ _ __(_) |_ _   _
-| | '_ ` _ \| '_ \| | | | '__| | __| | | |
-| | | | | | | |_) | |_| | |  | | |_| |_| |
-|_|_| |_| |_| .__/ \__,_|_|  |_|\__|\__, |
-            |_|                     |___/
-```
-
----
-
-# The harsh reality
-
-For a program to do something useful,
-
-it must be impure...
-
----
-
-# Purity rules out
-
-- updating records in a database
-
-
-- most api calls
-
-
-- caching
-
-
-- most clock based logic
-
-
-- errors
-
-
-- logging
-
-
-- producing and consuming kafka messages
-
----
-
-# Impure world
-
-The world is impure,
-
-so to model it with software makes the software impure
-
----
-
-# What to do?!
-
-Our ivory tower of functional programming is under attack
-
-from the cruel practical realities of our world
-
----
-
-# What to do
-
-Programs must have some impurity,
-
-push it up higher and keep the core pure where possible
-
----
-
-# Visually
-
-```
------------------------------------------
-    |         |         |         |       impurities
------------------------------------------
-|         |         |         |         |
------------------------------------------
-    |         |         |         |
------------------------------------------
-|         |         |         |         | pure foundations
------------------------------------------
-```
-
----
-
-# Simple example
-
-```scala
-def isAfternoon(): Boolean = ZonedDateTime.now().getHour() >= 12
-```
-
----
-
-# Writing tests
-
-```scala
-def isAfternoon(): Boolean = ZonedDateTime.now().getHour() >= 12
-
-...
-
-"isAfternoon" should {
-  "return true when run in the afternoon" in {
-    // Dear Jenkins, please only run this test during the afternoon UTC
-    isAfternoon() mustBe true
-  }
-
-  "return false when run in the morning" in {
-    // Dear Jenkins, please only run this test during the morning UTC
-    isAfternoon() mustBe false
-  }
+val total = 5 match {
+  case 0 => 0
+  case _ => 5 + sum(5 - 1)
 }
 ```
 
 ---
 
-# Testing...
-
-Non-deterministic functions are much harder to control and test
-
----
-
-# In the wild
-
-Currently:
+# Evaluate
 
 ```scala
-def isAfternoon(): Boolean = ZonedDateTime.now().getHour() >= 12
+def sum(top: Int): Int = top match {
+  case 0 => 0
+  case _ => top + sum(top - 1)
+}
 
-if (isAfternoon())
-  haveNap()
+val total = 5 + sum(4)
 ```
 
 ---
 
-# "Push it up"
-
-Currently:
+# Evaluate
 
 ```scala
-def isAfternoon(): Boolean = ZonedDateTime.now().getHour() >= 12
+def sum(top: Int): Int = top match {
+  case 0 => 0
+  case _ => top + sum(top - 1)
+}
 
-if (isAfternoon())
-  haveNap()
-```
-
-Push the impurity up a layer:
-
-```scala
-def isAfternoon(now: ZonedDateTime): Boolean = now.getHour() >= 12
-
-if (isAfternoon(ZonedDateTime.now())
-  haveNap()
+val total = 5 + (4 match {
+  ...
+})
 ```
 
 ---
 
-# "Push it up"
+# Evaluate
 
-We didn't remove the impurity,
+```scala
+def sum(top: Int): Int = top match {
+  case 0 => 0
+  case _ => top + sum(top - 1)
+}
 
-just moved it higher
+val total = 5 + 4 + sum(3)
+```
 
 ---
 
-# Back to testing
+# Equational reasoning
 
 ```scala
-def isAfternoon(now: ZonedDateTime): Boolean = now.getHour() >= 12
+def sum(top: Int): Int = top match {
+  case 0 => 0
+  case _ =>
+    counter += 1 // side effect
+    top + sum(top - 1)
+}
 
-...
+val total = sum(5)
 
-"isAfternoon" should {
-  "return true for an evening time" in {
-    isAfternoon(ZoneDateTime.parse("2022-06-13T22:23:01Z")) mustBe true
-  }
+          = 5 + sum(4)
 
-  "return false for a morning time" in {
-    isAfternoon(ZoneDateTime.parse("2022-06-13T05:04:04Z")) mustBe false
-  }
+          = 5 + 4 + sum(3)
+
+          = 5 + 4 + 3 + sum(2)
+
+          ...
+
+          = 5 + 4 + 3 + 2 + 1 + 0
+
+          = 15
+```
+
+Just like high school maths
+
+Feels like maths, because it's a pure function
+
+---
+
+# Impure?
+
+Suppose `sum` had a side effect though:
+
+```scala
+def sum(top: Int): Int = top match {
+  case 0 => 0
+  case _ =>
+    counter += 1 // side effect
+    top + sum(top - 1)
 }
 ```
 
-Much easier
+Can you still apply this equational reasoning?
 
 ---
 
-# Summary
+# Trickier
 
-Impurity is innevitable,
+Becomes
 
-put you can often push it to the higher layer,
+```scala
+def sum(top: Int): Int = top match {
+  case 0 => 0
+  case _ =>
+    counter += 1 // side effect
+    top + sum(top - 1)
+}
 
-and keep your internal libraries and services more pure
+val total = sum(5)
+
+         ?= 5 + sum(4)
+
+         ?= 5 + 4 + sum(3)
+
+         ?= 5 + 4 + 3 + sum(2)
+
+          ...
+
+         ?= 5 + 4 + 3 + 2 + 1 + 0
+
+         ?= 15
+```
+
+Our equational reasoning doesn't have a nice way to capture the side effect
 
 ---
 
-# Practically speaking
+# Equational reasoning
 
-The standard scala stack (`Future`) makes it hard to keep the core of your logic truly pure
+> Pure functions are like mathematical functions
+
+That unlocks mathematical processes of reasoning
 
 ---
 
-# Practically speaking
+# Recap
 
-The standard scala stack (`Future`) makes it hard to keep the core of your logic truly pure
+Pure functions make it easy to use "equational reasoning"
 
-There are more advanced frameworks like zio which make this easier
+You can unwind functions to understand how they work
 
-(Not on our roadmap though)
+Allows simplification/refactoring
+
+---
+
+# Testing
+
+In upcoming sessions we'll see that pure functions make testing easier
 
 ---
 
@@ -1160,60 +1083,70 @@ There are more advanced frameworks like zio which make this easier
 
 ---
 
-# Pure functions
+# Pure
 
-Functions which can always be inlined
+An expression is pure if you can inline it without changing program behaviour
 
-ie. referentially transparent
+```scala
+val cleaned = name.trim.toLowerCase
+process(cleaned)
 
----
-
-# Why are they useful?
-
-- code is easier to reason about and refactor
-
-
-- tests easier to write
+// becomes
+process(name.trim.toLowerCase)
+```
 
 ---
 
-# The trifecta of purity
+# Pure functions and mathematics
 
-Pure functions will be:
+Pure functions are like mathematical functions
 
-- free of side effects
+We can port mathematical concepts into our software engineering
+
+---
+
+# Very useful
+
+- makes refactoring easier
 
 
-- complete (not throw exceptions)
+- easier to reason about (no hidden traps)
+
+
+- easy to memoize
+
+
+- allows equational reasoning
+
+---
+
+# And more...
+
+Other reasons we couldn't cover today
+
+---
+
+# Holy Trinity of Purity
+
+- no side effects
+
+
+- no exceptions ("complete")
 
 
 - deterministic
 
 ---
 
-# Composition
+# My hope
 
-Pure + Pure = Pure
-
-If you combine small pure building blocks,
-
-you get something complex,
-
-but you know it's pure
+We'll start designing libraries and services with purity in mind
 
 ---
 
-# Purity and maths
+# Next time
 
-Pure functions resemble mathematical functions
-
----
-
-# Dealing with impurity
-
-It's innevitable
-
-But can be controlled and minimised
+Dealing with impurity
 
 ---
 
