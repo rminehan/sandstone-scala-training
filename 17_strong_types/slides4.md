@@ -113,36 +113,6 @@ Use a "wrapper" approach
 
 Wrap around a regular `Int` and limit it
 
----
-
-# Wrapper problems
-
-We won't use the wrapper approach in docserviceparent
-
-But discussing it helps us understand common issues with strong types
-
----
-
-# Considerations
-
-When making a strong type, consider:
-
-- security
-
-
-- interop
-
-
-- performance
-
----
-
-# Security
-
----
-
-# Wrapper approach
-
 To the repl!
 
 ---
@@ -301,23 +271,7 @@ There are ways you can close off those back doors
 
 Not the focus of today
 
----
-
-# My point
-
-When making a strong type,
-
-you want to prevent accidental mistakes
-
-```scala
-def processMetric(value: Int): Double = {
-  ...
-  val root = safeSqrt(Natural(value))  // <--- accidental mistake
-  ...
-}
-
-def safeSqrt(natural: Natural): Double = ...
-```
+Point is that you need to consider security
 
 ---
 
@@ -355,17 +309,12 @@ Anything that expects an `Int`, should accept a `Natural`
 
 ```scala
 def gimmeInt(int: Int): Unit = ...
-gimmeInt(3)            // Compiles
-gimmeInt(natural)      // Hopefully compiles
-
-def gimmeNatural(natural: Natural): Unit = ...
-gimmeNatural(1)        // Shouldn't compile
-gimmeNatural(natural)  // Compiles
+gimmeInt(natural)      // Compiles?
 ```
 
 ---
 
-# Wrapper approach
+# Wrapper approach?
 
 ```scala
 case class Natural(value: Int)
@@ -387,6 +336,27 @@ gimmeInt(natural.value)      // Compiles
 ```
 
 Not completely smooth, but workable
+
+---
+
+# Member methods
+
+```scala
+int.toFloat
+
+natural.toFloat // compiles?
+```
+
+---
+
+# Member methods
+
+```scala
+case class Natural(value: Int)
+
+natural.toFloat       // doesn't compile
+natural.value.toFloat // compiles, but a little icky
+```
 
 ---
 
@@ -422,6 +392,56 @@ Not for today!
 
 ---
 
+# Summary
+
+We've seen potential issues you can hit making with DIY strong types
+
+---
+
+# Summary
+
+We've seen potential issues you can hit making with DIY strong types
+
+- security
+
+
+- interop
+
+
+- performance
+
+---
+
+# Security
+
+When making a strong type,
+
+you want to prevent accidental mistakes
+
+```scala
+def processMetric(value: Int): Double = {
+  ...
+  val root = safeSqrt(Natural(value))  // <--- accidental mistake
+  ...
+}
+
+def safeSqrt(natural: Natural): Double = ...
+```
+
+---
+
+# Interop
+
+It's nice when strong types work like their weak types
+
+---
+
+# Performance
+
+Often strong types introduce overhead
+
+---
+
 ```
   ___
  / _ \ _   _ _ __
@@ -444,69 +464,84 @@ New library added to `docserviceparent`
 
 Makes it easy to create your own strong type
 
----
-
-# Note
-
-The framework demo'd today is a simplified version of what's in our library
-
-It uses some validation concepts we'll cover later
+To intellij!
 
 ---
 
-# Understanding our framework
+# Natural?
+
+What would `Natural` look like using our framework?
+
+To the repl!
 
 ---
 
-# Ingredients
+# Summary
+
+```scala
+object Natural extends Strong[Int] {
+  def validate(value: Int): Boolean = value >= 0
+}
+
+// Defines Natural.Type (our strong type)
+
+Natural.from(3)  // Some(3)
+Natural.from(-1) // None
+
+Natural.fromUnsafe(7)  // 7
+Natural.fromUnsafe(-3) // throws exception
+
+def safeSqrt(natural: Natural): Double = math.sqrt(natural)
+gimmeInt(natural) // compiles
+```
+
+---
+
+# DIY
 
 When making a strong type, what are the crucial ingredients?
 
----
-
-# Examples
-
 ```scala
-case class Natural(value: Int)
-
-object Natural {
-  def fromInt(value: Int): Option[Natural] = if (value >= 0) Some(Natural(value)) else None
+object Natural extends Strong[Int] {
+  def validate(value: Int): Boolean = value >= 0
 }
 
-
-case class NonEmptyString(value: String)
-
-object NonEmptyString {
-  def fromString(value: String): Option[NonEmptyString] = if (value.nonEmpty) Some(NonEmptyString(value)) else None
+object NonEmptyString extends Strong[String] {
+  def validate(value: String): Boolean = value.nonEmpty
 }
 ```
 
----
-
-# Examples
-
-```scala
-case class Natural(value: Int)
-//         ^^^^^^^        ^^^
-
-object Natural {
-  def fromInt(value: Int): Option[Natural] = if (value >= 0) Some(Natural(value)) else None
-  //                                             ^^^^^^^^^^
-}
-
-
-case class NonEmptyString(value: String)
-//         ^^^^^^^^^^^^^^        ^^^^^^
-
-object NonEmptyString {
-  def fromString(value: String): Option[NonEmptyString] = if (value.nonEmpty) Some(NonEmptyString(value)) else None
-  //                                                          ^^^^^^^^^^^^^^
-}
+```
+ ___
+|__ \
+  / /
+ |_|
+ (_)
 ```
 
 ---
 
 # Ingredients
+
+```scala
+//     name                   weak type
+object Natural extends Strong[Int] {
+  def validate(value: Int): Boolean = value >= 0
+  //                                  validation logic
+}
+
+//     name                          weak type
+object NonEmptyString extends Strong[String] {
+  def validate(value: String): Boolean = value.nonEmpty
+  //                                     validation logic
+}
+```
+
+---
+
+# Framework
+
+## Developer supplies
 
 - name for the strong type
 
@@ -515,6 +550,16 @@ object NonEmptyString {
 
 
 - validation logic: `Weak => Boolean`
+
+## Framework supplies:
+
+- `Type`
+
+
+- `from`
+
+
+- `fromUnsafe`
 
 ---
 
@@ -528,72 +573,20 @@ trait Strong[Weak] {
   def validate(value: Weak): Boolean
 }
 
-object Natural extends Strong[Int] {
-  def validate(value: Int): Boolean = value >= 0
-}
-```
-
----
-
-# Ingredients
-
-- name for the strong type
-
-
-- weak type
-
-
-- validation logic: `Weak => Boolean`
-
-```scala
-//     name                   weak type
+//     name                   weak
 object Natural extends Strong[Int] {
   def validate(value: Int): Boolean = value >= 0
   //                                  validation
 }
 ```
 
-Put in your ingredients and the framework does the rest for you
-
 ---
 
-# Considerations
+# More examples!
 
-Wrapper approach
+Back to the repl!
 
-- secure? (no, needs work)
-
-
-- interop? (no)
-
-
-- performant? (no)
-
-Our mini-framework
-
-- secure? (yep*)
-
-
-- interop? (yep!)
-
-
-- performant? (yep!)
-
----
-
-# Also
-
-Framework is simple and depends only on cats
-
----
-
-# Demo time
-
-Primary goal: show you how to use it
-
-Secondary goal: explain how it works under the hood
-
-To the repl!
+`NonEmptyString` and `Name`
 
 ---
 
@@ -603,14 +596,6 @@ To the repl!
 trait Strong[Weak] {
   ...
 }
-
-type Natural = Natural.Type
-object Natural extends Strong[Int] {
-  def validate(i: Int): Boolean = i >= 0
-}
-
-def safeSqrt(natural: Natural): Double = math.sqrt(natural)
-gimmeInt(natural) // compiles
 
 type NonEmptyString = NonEmptyString.Value
 object NonEmptyString extends Strong[String] {
@@ -630,7 +615,39 @@ object Name extends Strong[String] {
 
 ---
 
-# strongtypes library
+# Considerations
+
+## Wrapper approach
+
+- secure? (no, needs work)
+
+
+- interop? (no)
+
+
+- performant? (no)
+
+## Our mini-framework
+
+- secure? (yep*)
+
+
+- interop? (yep!)
+
+
+- performant? (yep!)
+
+---
+
+# Design Notes
+
+Framework is simple and depends only on cats
+
+Designed to minimise boilerplate
+
+---
+
+# strongtypes library recap
 
 Contains:
 
@@ -651,9 +668,17 @@ Where do I put it?
 
 > Where do I put it?
 
-If it's general purpose: add to strongtypes library
+If it's general purpose: add to strongtypes library `common` package
 
 If it's specific to my service: add it there
+
+---
+
+# Note
+
+The framework demo'd today is a simplified version of what's in our library
+
+It uses some validation concepts we'll cover later
 
 ---
 
@@ -695,6 +720,12 @@ Analogy: tagging a fish
 ---
 
 # Differentiating
+
+Demo time!
+
+---
+
+# Summary
 
 ```scala
 Int
