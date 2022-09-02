@@ -146,6 +146,19 @@ Conditions:
 
 ---
 
+# Context
+
+> possibly some character restrictions
+
+Examples:
+
+- bank
+
+
+- chat website
+
+---
+
 # Example 2
 
 Digit (0-9)
@@ -226,13 +239,25 @@ Or:
 - non-empty tokens on both sides
 
 
-- tokens restricted to certain characters
+- tokens restricted to certain characters (e.g. no whitespace)
 
 
 - tokens can't start or end with certain symbols (e.g. '.')
 
 
-- no boundary whitespace
+---
+
+# What is a "valid" email?
+
+Different perspectives:
+
+- parsing: follows a particular pattern
+
+
+- product: is used by someone
+
+
+- security: doesn't contain an injection attack
 
 ---
 
@@ -276,9 +301,114 @@ Potential precision issues
 
 ---
 
+# Example
+
+```scala
+var total = 0F
+
+for (i <- 0 until 200)
+  total += 0.1F
+
+println(total)
+```
+
+200 * 0.1 = 20
+
+---
+
+# One-dollar-ionairre
+
+```scala
+var total = 0F
+
+for (i <- 0 until 200)
+  total += 0.1F
+
+println(total)
+```
+
+What will this do:
+
+```
+(A) Print 20             (C) Stack overflow
+
+
+(B) Print anything       (D) Become sentient
+    but 20                   and overthrow us for
+                             our bad precision practices
+```
+
+```
+ ___
+|__ \
+  / /
+ |_|
+ (_)
+```
+
+---
+
+# B!
+
+```scala
+var total = 0F
+
+for (i <- 0 until 200)
+  total += 0.1F
+
+println(total)
+```
+
+What will this do:
+
+```
+(A) Print 20             (C) Stack overflow
+
+
+(B) Print anything       (D) Become sentient
+    but 20                   and overthrow us for
+    ^^^^^^^^^^^^^^           our bad precision practices
+```
+
+To the repl!
+
+---
+
+# Summary
+
+```scala
+var total = 0F
+
+for (i <- 0 until 200) total += 0.1f
+
+println(total)
+// 20.00004
+
+
+// Repeat experiment with a higher number of accumulations
+var total = 0F
+
+for (i <- 0 until 20_000) total += 0.1F
+
+println(total)
+// 1999.6588F
+```
+
+When converting this to real dollars/cents, 34c has vanished
+
+---
+
 # BigDecimal
 
 Better for precision
+
+Will allow more than 2.d.p
+
+---
+
+# Hypothetical
+
+Suppose we won't allow beyond 2.d.p...
 
 ---
 
@@ -786,7 +916,7 @@ That information gets thrown away...
 - "1.2"
 
 
-- "1.2"
+- "1.2."
 
 
 - "1.2.0"
