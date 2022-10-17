@@ -1,0 +1,3 @@
+POST  /user  controllers.UserController.saveUser()
+
+GET   /user  controllers.UserController.findById(id: java.util.UUID)

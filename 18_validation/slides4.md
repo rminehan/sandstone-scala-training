@@ -4,8 +4,6 @@ date: 2022-10-18
 title: Single Responsibility Models
 ---
 
----
-
 ```
  ____  _             _
 / ___|(_)_ __   __ _| | ___
@@ -49,7 +47,27 @@ POST /user
 }
 ```
 
-To the demo!
+---
+
+# Warning
+
+During the demo I am going to use some bad hacks
+
+(but I won't tell you when!)
+
+Make sure to watch right to the end!
+
+---
+
+# Simplified
+
+No Future's or Security or Logging Frameworks
+
+Removes unrelated complexity from the demo
+
+---
+
+# Demo time!
 
 ---
 
@@ -95,3 +113,31 @@ Widening your models can open potential security vulnerabilities
 Feels like over engineering at first
 
 But it's just a reflection that these case classes have different purposes
+
+---
+
+# Single Responsibility Models
+
+> Feels like over engineering at first
+>
+> But it's just a reflection that these case classes have different purposes
+
+Avoids your models becoming the "lowest common denominator"
+
+---
+
+# Next time
+
+Not sure...
+
+Probably add more endpoints to the demo and a kafka consumer
+
+---
+
+```
+  ___                  _   _
+ / _ \ _   _  ___  ___| |_(_) ___  _ __  ___
+| | | | | | |/ _ \/ __| __| |/ _ \| '_ \/ __| ?
+| |_| | |_| |  __/\__ \ |_| | (_) | | | \__ \
+ \__\_\\__,_|\___||___/\__|_|\___/|_| |_|___/
+```
