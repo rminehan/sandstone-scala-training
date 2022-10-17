@@ -1,6 +1,6 @@
 ---
 author: Rohan
-date: 2022-09-20
+date: 2022-10-04
 title: Validated
 ---
 
@@ -508,6 +508,9 @@ def validateName(name: String): ValidatedNel[NameError, Name] =
 # Summary 2
 
 ```scala
+type PasswordError = String
+type Password = String
+
 def validatePassword(password: String): ValidatedNel[PasswordError, Password] = {
   val lengthError = if (password.length < 8) Some("8 characters required") else None
 
@@ -597,6 +600,21 @@ Only one "slot" for an error
 
 `ValidatedNel` does
 
+```scala
+import cats.syntax.apply._
+type UserError = String
+
+case class User(name: Name, password: Password)
+
+def validateUser(name: String, password: String): ValidatedNel[UserError, User] = {
+  val nameValidated = validateName(name)
+  val passwordValidated = validatePassword(password)
+  (nameValidated, passwordValidated).mapN {
+    case (name, password) => User(name, password)
+  }
+}
+```
+
 ---
 
 ```
@@ -627,6 +645,23 @@ Only one "slot" for an error
 Extra knowledge
 
 Not crucial for day to day development
+
+But you can earn some hard cash (thanks Feroz for sponsoring one-dollar-ionairre)
+
+---
+
+# Compiler error
+
+What does this mean?
+
+```
+Could not find an instance of Semigroupal for [+A]cats.data.Validated[java.io.Serializable,A]
+  (nameValidated, passwordValidated).mapN {
+                                          ^
+Compilation Failed
+```
+
+Something about a semigroup???
 
 ---
 
@@ -659,6 +694,21 @@ class NelSemigroup[T] extends Semigroup[NonEmptyList[T]] {
   def combine(left: NonEmptyList[T], right: NonEmptyList[T]): NonEmptyList[T] = left ++ right
 }
 ```
+
+---
+
+# Compiler error
+
+```
+Could not find an instance of Semigroupal for [+A]cats.data.Validated[java.io.Serializable,A]
+  (nameValidated, passwordValidated).mapN {
+                                          ^
+Compilation Failed
+```
+
+When `mapN` gets some `Validated[E, A]`, it needs a `Semigroup` to know how to combine errors together
+
+The compiler is confused because it can't it
 
 ---
 

@@ -32,7 +32,7 @@ Validation concepts
 - purity
 
 
-- strong types
+- strong types/modelling
 
 
 - validation (you are here)
@@ -193,6 +193,39 @@ POST /user
 
 ---
 
+# Deserialisation
+
+```json
+{
+  "name": "Boban Jones",
+  "age": 26,
+  "email": "bobanjones@gmail.com",
+  "password": "Boban4ever"
+}
+```
+
+```scala
+case class Input(name: String, age: Int, email: String, password: String)
+
+object Input {
+  implicit val format: Format[Input] = ...
+}
+```
+
+---
+
+# Weak
+
+```scala
+case class Input(name: String, age: Int, email: String, password: String)
+
+object Service {
+  def create(user: Input): Future[UserId]
+}
+```
+
+---
+
 # Validation
 
 ```json
@@ -207,12 +240,16 @@ POST /user
 Suppose we make strong types for each field
 
 ```scala
-object Name {
-  def fromString(name: String): Option[Name] = if(...) Some(Name(name)) else None
+object Name extends Strong[String] {
+  ...
 }
 
-object Age {
-  def fromInt(age: Int): Option[Age] = if(...) Some(Age(age)) else None
+object Age extends Strong[Int] {
+  ...
+}
+
+object Email extends Strong[String] {
+  ...
 }
 
 ...
@@ -234,6 +271,42 @@ object Service {
 }
 ```
 
+If all weak fields can be converted to strong fields, process the payload
+
+Otherwise return 400 with error messages
+
+---
+
+# What would it look like
+
+```scala
+case class Input(name: String, age: Int, email: String, password: String)
+
+// ???
+
+case class User(name: Name, age: Age, email: Email, password: Password)
+```
+
+---
+
+# Recall
+
+```scala
+trait Strong[Weak] {
+  def validate(value: Weak): Boolean
+
+  def from(value: Weak): Option[Type] = if (validate(value)) Some(...) else None
+}
+
+
+object Name extends Strong[String] {
+  def validate(value: String): Boolean = value.nonEmpty && value.trim == value
+}
+
+Name.from("Boban") // Some
+Name.from("") // None
+```
+
 ---
 
 # Zooming out
@@ -243,10 +316,10 @@ val input: Input = ... // parse from json
 
 val userOpt: Option[User] =
   for {
-    name     <- Name.fromString(input.name)
-    age      <- Age.fromInt(input.age)
-    email    <- Email.fromString(input.email)
-    password <- Password.fromString(input.password)
+    name     <- Name.from(input.name)
+    age      <- Age.from(input.age)
+    email    <- Email.from(input.email)
+    password <- Password.from(input.password)
   } yield User(name, age, email, password)
 
 userOpt match {
@@ -254,10 +327,6 @@ userOpt match {
   case None => Future.successful(Invalid) // 400
 }
 ```
-
-If the input is all valid, we can make a `User` and call the underlying service
-
-If not, return 400.
 
 ---
 
@@ -300,11 +369,11 @@ Using `Option` to represent validation
 ```scala
 val userOpt: Option[User] =
   for {
-    name     <- Name.fromString(input.name)         // Option[Name]
-    age      <- Age.fromInt(input.age)              // Option[Age]
-    email    <- Email.fromString(input.email)       // Option[Email]
-    password <- Password.fromString(input.password) // Option[Password]
-  } yield User(name, age, email, password)          // Option[User]
+    name     <- Name.from(input.name)         // Option[Name]
+    age      <- Age.from(input.age)           // Option[Age]
+    email    <- Email.from(input.email)       // Option[Email]
+    password <- Password.from(input.password) // Option[Password]
+  } yield User(name, age, email, password)    // Option[User]
 ```
 
 We are working in the "context" of `Option`
@@ -316,9 +385,11 @@ We are working in the "context" of `Option`
 Useful when it's obvious why we got None
 
 ```scala
-NonEmptyList.fromList(x) // None => list was empty
+val people: List[Person] = ...
 
-list.find(_.age == 18) // None => no one was 18
+NonEmptyList.fromList(people) // None => list was empty
+
+people.find(_.age == 18) // None => no one was 18
 ```
 
 ---
@@ -328,9 +399,7 @@ list.find(_.age == 18) // None => no one was 18
 Less useful when there's multiple reasons for getting None
 
 ```scala
-object Password {
-  def fromString(password: String): Option[Password] = ...
-}
+Password.from(input.password)
 ```
 
 - too few characters?
@@ -360,12 +429,12 @@ Gives you no details to correct it
 val userOpt: Option[User] =
   for {
 
-    name     <- Name.fromString(input.name)         // Option[Name]
-    age      <- Age.fromInt(input.age)              // Option[Age]
-    email    <- Email.fromString(input.email)       // Option[Email]
-    password <- Password.fromString(input.password) // Option[Password]
+    name     <- Name.from(input.name)         // Option[Name]
+    age      <- Age.from(input.age)           // Option[Age]
+    email    <- Email.from(input.email)       // Option[Email]
+    password <- Password.from(input.password) // Option[Password]
 
-  } yield User(name, age, email, password)          // Option[User]
+  } yield User(name, age, email, password)    // Option[User]
 ```
 
 The individual failures are just `None`'s
@@ -392,9 +461,9 @@ Either is like `Option` + error message
 # Either
 
 ```diff
- object Password {
--  def fromString(password: String): Option[Password] = ...
-+  def fromString(password: String): Either[String, Password] = ...
+ trait Strong[Weak] {
+-  def validate(value: Weak): Boolean
++  def validate(value: Weak): Either[String, Weak]
  }
 ```
 
@@ -406,11 +475,11 @@ Use `String` instead of `Exception` to hold error messages
 
 ```scala
 object Password {
-  def fromString(password: String): Either[String, Password] = {
-    if (password.length < 8) Left("Password must be at least 8 characters")
-    else if (!password.exists(isDigit)) Left("Password must contain at least one digit")
+  def validate(value: String): Either[String, String] = {
+    if (value.length < 8) Left("Password must be at least 8 characters")
+    else if (!value.exists(isDigit)) Left("Password must contain at least one digit")
     ... // other validation checks
-    else Right(new Password(password))
+    else Right(value)
   }
 }
 ```
@@ -428,11 +497,11 @@ Imagine all the validators use `Either` now
 ```scala
 val userEither: Either[String, User] =
   for {
-    name     <- Name.fromString(input.name)         // Either[String, Name]
-    age      <- Age.fromInt(input.age)              // Either[String, Age]
-    email    <- Email.fromString(input.email)       // Either[String, Email]
-    password <- Password.fromString(input.password) // Either[String, Password]
-  } yield User(name, age, email, password)          // Either[String, User]
+    name     <- Name.from(input.name)         // Either[String, Name]
+    age      <- Age.from(input.age)           // Either[String, Age]
+    email    <- Email.from(input.email)       // Either[String, Email]
+    password <- Password.from(input.password) // Either[String, Password]
+  } yield User(name, age, email, password)    // Either[String, User]
 
 userEither match {
   case Right(user) => service.create(user).map(Created) // 201
@@ -479,11 +548,11 @@ Why is it broken?
 val userEither: Either[String, User] =
                     // ^^^^^^ one error
   for {
-    name     <- Name.fromString(input.name)         // Either[String, Name]
-    age      <- Age.fromInt(input.age)              // Either[String, Age]
-    email    <- Email.fromString(input.email)       // Either[String, Email]
-    password <- Password.fromString(input.password) // Either[String, Password]
-  } yield User(name, age, email, password)          // Either[String, User]
+    name     <- Name.from(input.name)         // Either[String, Name]
+    age      <- Age.from(input.age)           // Either[String, Age]
+    email    <- Email.from(input.email)       // Either[String, Email]
+    password <- Password.from(input.password) // Either[String, Password]
+  } yield User(name, age, email, password)    // Either[String, User]
 ```
 
 Modelling our validation as `Either[String, User]` assumes only one thing can go wrong
@@ -503,14 +572,13 @@ They could stuff up all 4 fields
 # Multiple errors per field?
 
 ```scala
-val userEither: Either[String, User] =
   for {
-    name     <- Name.fromString(input.name)         // Either[String, Name]
-    age      <- Age.fromInt(input.age)              // Either[String, Age]
-    email    <- Email.fromString(input.email)       // Either[String, Email]
-    password <- Password.fromString(input.password) // Either[String, Password]
-  } yield User(name, age, email, password)          // Either[String, User]
-  //                                                          ^^^^^^
+    name     <- Name.from(input.name)         // Either[String, Name]
+    age      <- Age.from(input.age)           // Either[String, Age]
+    email    <- Email.from(input.email)       // Either[String, Email]
+    password <- Password.from(input.password) // Either[String, Password]
+  } yield User(name, age, email, password)    // Either[String, User]
+  //                                                    ^^^^^^
 ```
 
 e.g. a password could have multiple issues
@@ -684,11 +752,11 @@ Bad modelling guides you away from a correct implementation
 ```scala
 val userEither: Either[String, User] =
   for {
-    name     <- Name.fromString(input.name)         // Either[String, Name]
-    age      <- Age.fromInt(input.age)              // Either[String, Age]
-    email    <- Email.fromString(input.email)       // Either[String, Email]
-    password <- Password.fromString(input.password) // Either[String, Password]
-  } yield User(name, age, email, password)          // Either[String, User]
+    name     <- Name.from(input.name)         // Either[String, Name]
+    age      <- Age.from(input.age)           // Either[String, Age]
+    email    <- Email.from(input.email)       // Either[String, Email]
+    password <- Password.from(input.password) // Either[String, Password]
+  } yield User(name, age, email, password)    // Either[String, User]
 ```
 
 What makes a `for` comprehension a true monadic computation?
@@ -708,11 +776,11 @@ What makes a `for` comprehension a true monadic computation?
 ```scala
 val userEither: Either[String, User] =
   for {
-    name     <- Name.fromString(input.name)         // Either[String, Name]
-    age      <- Age.fromInt(input.age)              // Either[String, Age]
-    email    <- Email.fromString(input.email)       // Either[String, Email]
-    password <- Password.fromString(input.password) // Either[String, Password]
-  } yield User(name, age, email, password)          // Either[String, User]
+    name     <- Name.from(input.name)         // Either[String, Name]
+    age      <- Age.from(input.age)           // Either[String, Age]
+    email    <- Email.from(input.email)       // Either[String, Email]
+    password <- Password.from(input.password) // Either[String, Password]
+  } yield User(name, age, email, password)    // Either[String, User]
 ```
 
 > What makes a `for` comprehension a true monadic computation?
@@ -730,11 +798,11 @@ Can't re-order steps
 ```scala
 val userEither: Either[String, User] =
   for {
-    name     <- Name.fromString(input.name)         // Either[String, Name]
-    age      <- Age.fromInt(input.age)              // Either[String, Age]
-    email    <- Email.fromString(input.email)       // Either[String, Email]
-    password <- Password.fromString(input.password) // Either[String, Password]
-  } yield User(name, age, email, password)          // Either[String, User]
+    name     <- Name.from(input.name)         // Either[String, Name]
+    age      <- Age.from(input.age)           // Either[String, Age]
+    email    <- Email.from(input.email)       // Either[String, Email]
+    password <- Password.from(input.password) // Either[String, Password]
+  } yield User(name, age, email, password)    // Either[String, User]
 ```
 
 Suppose the FE submitted a bad name and a bad password
@@ -756,10 +824,10 @@ What would the service return to the FE?
 ```scala
 val userEither: Either[String, User] =
   for {
-    name     <- Name.fromString(input.name)      // <--- short circuits
-    age      <- Age.fromInt(input.age)
-    email    <- Email.fromString(input.email)
-    password <- Password.fromString(input.password)
+    name     <- Name.from(input.name)      // <--- short circuits
+    age      <- Age.from(input.age)
+    email    <- Email.from(input.email)
+    password <- Password.from(input.password)
   } yield User(name, age, email, password)
 ```
 
@@ -778,10 +846,10 @@ Age, email and password are never validated
 ```scala
 val userEither: Either[String, User] =
   for {
-    name     <- Name.fromString(input.name)
-    age      <- Age.fromInt(input.age)
-    email    <- Email.fromString(input.email)
-    password <- Password.fromString(input.password) // <--- fails
+    name     <- Name.from(input.name)
+    age      <- Age.from(input.age)
+    email    <- Email.from(input.email)
+    password <- Password.from(input.password) // <--- fails
   } yield User(name, age, email, password)
 ```
 
@@ -859,13 +927,13 @@ Assume we've validated each part independently
 ```scala
 type Errors = NonEmptyList[String]
 
-val nameEither: Either[Errors, Name] = Name.fromString(input.name)
+val nameEither: Either[Errors, Name] = Name.from(input.name)
 
-val ageEither: Either[Errors, Age] = Age.fromString(input.age)
+val ageEither: Either[Errors, Age] = Age.from(input.age)
 
-val emailEither: Either[Errors, Email] = Email.fromString(input.email)
+val emailEither: Either[Errors, Email] = Email.from(input.email)
 
-val passwordEither: Either[Errors, Password] = Password.fromString(input.password)
+val passwordEither: Either[Errors, Password] = Password.from(input.password)
 
 // Somehow combine them into:
 
