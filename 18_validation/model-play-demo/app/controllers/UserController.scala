@@ -3,7 +3,7 @@ package controllers
 import javax.inject._
 import play.api._
 import play.api.http.{ContentTypes, Writeable}
-import play.api.libs.json.{Json, JsValue, OFormat}
+import play.api.libs.json.{Json, JsValue, OFormat, Reads, Writes}
 import play.api.mvc._
 import java.util.UUID
 
@@ -14,16 +14,14 @@ class UserController @Inject()(val controllerComponents: ControllerComponents, u
     println("---")
     println(s"Save request: ${request.body}")
 
-    implicit val uuidWriter = play.api.libs.json.Writes.UuidWrites
-
     request
       .body
-      .validate[Post]
+      .validate[User]
       .fold(
         _ => BadRequest,
         post => {
-          val user = userService.saveUser(post.name, post.age)
-          Created(Json.toJson(Response(user.id)))
+          val user = userService.saveUser(post.name, user.age)
+          Created(userWithId.id.toString)
         }
       )
   }
@@ -34,8 +32,11 @@ class UserController @Inject()(val controllerComponents: ControllerComponents, u
   }
 
   private case class Post(name: String, age: Int)
-  private implicit val postFormat: OFormat[Post] = Json.format[Post]
+  private implicit val postReads: Reads[Post] = Json.reads[Post]
 
   private case class Response(id: UUID)
-  private implicit val responseFormat: OFormat[Response] = Json.format[Response]
+  private implicit val responseWrites: Writes[Response] = Json.writes[Response]
+
+  private case class Errors(errors: Seq[String])
+  private implicit val errorsWrites: Writes[Errors] = Json.writes[Errors]
 }
