@@ -5,9 +5,10 @@ import java.time.Instant
 import javax.inject._
 
 import models.{User, UserRepository}
+import models.Strong._
 
 class UserService @Inject() (userRepository: UserRepository) {
-  def saveUser(name: String, age: Int): User = {
+  def saveUser(name: Name, age: Age): User = {
     val id = UUID.randomUUID()
     val now = Instant.now
     val userToSave = User(

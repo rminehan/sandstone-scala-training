@@ -6,6 +6,13 @@ import play.api.http.{ContentTypes, Writeable}
 import play.api.libs.json.{Json, JsValue, OFormat, Reads, Writes}
 import play.api.mvc._
 import java.util.UUID
+import java.time.Instant
+
+import models.{Age, Name}
+import models.Strong._
+import cats.data.ValidatedNel
+import cats.data.Validated.{Invalid, Valid}
+import cats.syntax.apply._
 
 @Singleton
 class UserController @Inject()(val controllerComponents: ControllerComponents, userService: UserService) extends BaseController {
@@ -16,12 +23,23 @@ class UserController @Inject()(val controllerComponents: ControllerComponents, u
 
     request
       .body
-      .validate[User]
+      .validate[Post]
       .fold(
         _ => BadRequest,
         post => {
-          val user = userService.saveUser(post.name, user.age)
-          Created(userWithId.id.toString)
+          val nameVNel = Name.from(post.name)
+          val ageVNel = Age.from(post.age)
+
+          val userVNel = (nameVNel, ageVNel).mapN {
+            case (name, age) => userService.saveUser(name, age)
+          }
+
+          userVNel match {
+            case Valid(user) => Created(Json.toJson(Response(user.id)))
+            case Invalid(errors) =>
+              println("Request failed additional validation")
+              BadRequest(Json.toJson(Errors(errors.toList)))
+          }
         }
       )
   }
