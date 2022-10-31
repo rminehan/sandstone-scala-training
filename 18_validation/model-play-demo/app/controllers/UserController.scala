@@ -45,12 +45,22 @@ class UserController @Inject()(val controllerComponents: ControllerComponents, u
   }
 
   def findById(id: UUID): Action[AnyContent] = Action {
-    // TODO
-    BadRequest
+    val user = userService.getUser(id)
+
+    val get = Get(
+      id = user.id,
+      name = user.name,
+      created = user.created
+    )
+
+    Ok(Json.toJson(get))
   }
 
   private case class Post(name: String, age: Int)
   private implicit val postReads: Reads[Post] = Json.reads[Post]
+
+  private case class Get(id: UUID, name: String, created: Instant)
+  private implicit val getWrites: Writes[Get] = Json.writes[Get]
 
   private case class Response(id: UUID)
   private implicit val responseWrites: Writes[Response] = Json.writes[Response]
