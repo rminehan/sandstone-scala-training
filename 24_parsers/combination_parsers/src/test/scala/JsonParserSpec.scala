@@ -165,6 +165,19 @@ class JsonParserSpec extends AnyWordSpec with Matchers {
     "parse an empty array" in {
       assertParses(jsArray, "[]", JsArray(Seq.empty))
     }
+    "parse an empty array with a space" in {
+      assertParses(jsArray, "[ ]", JsArray(Seq.empty))
+    }
+    "parse an empty with various whitespace" in {
+      assertParses(jsArray, """[\t "a"\n,  "b", \n\n "c" , \r"d" ]""",
+        buildJsArray(
+          buildJsString("a"),
+          buildJsString("b"),
+          buildJsString("c"),
+          buildJsString("d")
+        )
+      )
+    }
     "parse a simple boolean array" in {
       assertParses(jsArray, "[true,false,true]", buildJsArray(jsTrue, jsFalse, jsTrue))
     }
@@ -201,7 +214,17 @@ class JsonParserSpec extends AnyWordSpec with Matchers {
 
   "object parser" should {
     "parse an empty object" in {
-      assertParses(jsObject, "{}", JsObject(Map.empty))
+      assertParses(jsObject, "{}", emptyJsObject)
+    }
+    "parse an empty object with a space" in {
+      assertParses(jsObject, "{ }", emptyJsObject)
+    }
+    "parse an empty object split over 2 lines" in {
+      assertParses(jsObject, "{\n}", emptyJsObject)
+    }
+    "parse an object with various whitespace" in {
+      assertParses(jsObject, """{ "a": "b", \t\t "c"  : \t"d"}""", buildJsObject("a" -> buildJsString("b"), "c" -> buildJsString("d")))
+      // assertParses(jsObject, """{ "a":\t "b", \n\n "c"  : \r"d"}""", buildJsObject("a" -> buildJsString("b"), "c" -> buildJsString("d")))
     }
     "not parse an object with a trailing comma" in {
       assertDoesntParse(jsObject, "{true,1.3,false,}")
@@ -229,13 +252,32 @@ class JsonParserSpec extends AnyWordSpec with Matchers {
   }
 
   "js parser" should {
-    // Just a lightweight "integration" test as the individual parsers are well tested
+    // Just lightweight "integration" tests as the individual parsers are well tested
     "parse a json object" in {
-      
-
+      assertParses(js, """{"null":null,"boolean":true,"string":"bro","numeric":-3.55,"array":["anna"],"object":{"foo":4}}""",
+        buildJsObject(
+          "null" -> JsNull,
+          "boolean" -> jsTrue,
+          "string" -> buildJsString("bro"),
+          "numeric" -> buildJsNumeric("-3.55"),
+          "array" -> buildJsArray(buildJsString("anna")),
+          "object" -> buildJsObject("foo" -> buildJsNumeric("4"))
+        )
+      )
     }
 
+    "allow whitespace" in {
+      assertParses(js, """{ "yo"  :\t "bro",\r "array": \n[1 , 2,3 ] }""",
+        buildJsObject(
+          "yo" -> buildJsString("bro"),
+          "array" -> buildJsArray(buildJsNumeric("1"), buildJsNumeric("2"), buildJsNumeric("3"))
+        )
+      )
+    }
   }
 
   // https://com-lihaoyi.github.io/fastparse/#WhitespaceHandling
+  "whitespace handling" should {
+
+  }
 }
